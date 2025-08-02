@@ -22,9 +22,12 @@ export class Forecast {
 
   public getDistanceFromFirstMonthText(forecastDate: Date): string {
     const inPast = forecastDate < this.month0Date;
-    const difference = this.getDistanceFromDateText(forecastDate, this.month0Date);
+    const difference = this.getDistanceFromDateText(
+      forecastDate,
+      this.month0Date
+    );
     const suffix = inPast ? 'ago' : '';
-    return difference ? difference + suffix: undefined;
+    return difference ? difference + suffix : undefined;
   }
 
   public getDistanceFromDateText(forecastDate: Date, fromDate: Date): string {
@@ -33,8 +36,8 @@ export class Forecast {
     }
 
     let monthDifference =
-      ((forecastDate.getFullYear() - fromDate.getFullYear()) * 12)
-      + (forecastDate.getMonth() - fromDate.getMonth());
+      (forecastDate.getFullYear() - fromDate.getFullYear()) * 12 +
+      (forecastDate.getMonth() - fromDate.getMonth());
 
     if (monthDifference === 0) {
       return;
@@ -43,7 +46,9 @@ export class Forecast {
     monthDifference = Math.abs(monthDifference);
     const months = monthDifference % 12;
     const years = (monthDifference - months) / 12;
-    return this.getTimeString(years, 'year') + this.getTimeString(months, 'month');
+    return (
+      this.getTimeString(years, 'year') + this.getTimeString(months, 'month')
+    );
   }
 
   private getTimeString(timeDifference: number, unit: string): string {
@@ -60,63 +65,145 @@ export class Forecast {
     const stopForecastingAmount = calculateInput.fiNumber * 1.6; // default to a bit more than Fat FI.
 
     const annualExpenses = calculateInput.annualExpenses;
-    const monthlyAverageGrowth = 1 + calculateInput.expectedAnnualGrowthRate / 12;
+    const monthlyAverageGrowth =
+      1 + calculateInput.expectedAnnualGrowthRate / 12;
     const startingNetWorth = calculateInput.netWorth;
     let currentNetWorth = startingNetWorth;
     let totalContributions = currentNetWorth; // can't yet delve into the past
     let month = 0;
-    const monthlyForecasts = [new MonthlyForecast({
-      monthIndex: 0,
-      netWorth: startingNetWorth,
-      lastMonthNetWorth: 0,
-      contribution: 0,
-      interestGains: 0,
-      timesAnnualExpenses: round(startingNetWorth / annualExpenses),
-      totalContributions: totalContributions,
-      totalReturns: 0,
-      coastFireNumber: calculateInput.coastFireNumber,
-      coastFirePlusFive: calculateInput.coastFirePlusFive,
-      coastFireMinusFive: calculateInput.coastFireMinusFive,
-      coastFireAchieved: startingNetWorth >= calculateInput.coastFireNumber,
-      fireAchieved: startingNetWorth >= calculateInput.fiNumber
-    })];
+
+    // Calculate initial Coast FIRE values for month 0
+    const initialCoastFire = this.calculateCoastFireForMonth(calculateInput, 0);
+
+    const monthlyForecasts = [
+      new MonthlyForecast({
+        monthIndex: 0,
+        netWorth: startingNetWorth,
+        lastMonthNetWorth: 0,
+        contribution: 0,
+        interestGains: 0,
+        timesAnnualExpenses: round(startingNetWorth / annualExpenses),
+        totalContributions: totalContributions,
+        totalReturns: 0,
+        coastFireNumber: initialCoastFire.coastFireNumber,
+        coastFirePlusFive: initialCoastFire.coastFirePlusFive,
+        coastFireMinusFive: initialCoastFire.coastFireMinusFive,
+        coastFireAchieved: startingNetWorth >= initialCoastFire.coastFireNumber,
+        fireAchieved: startingNetWorth >= calculateInput.fiNumber,
+      }),
+    ];
     while (currentNetWorth < stopForecastingAmount && month < 1000) {
       const contribution = calculateInput.monthlyContribution;
-      const newNetWorth = round(((currentNetWorth + contribution) * 100 * monthlyAverageGrowth) / 100);
+      const newNetWorth = round(
+        ((currentNetWorth + contribution) * 100 * monthlyAverageGrowth) / 100
+      );
       const interestGain = round(newNetWorth - currentNetWorth - contribution);
       const timesAnnualExpenses = round(newNetWorth / annualExpenses);
       month++;
       totalContributions += contribution;
       const totalReturns = round(newNetWorth - totalContributions);
-      monthlyForecasts.push(new MonthlyForecast({
-        monthIndex: month,
-        netWorth: newNetWorth,
-        lastMonthNetWorth: currentNetWorth,
-        contribution: contribution,
-        interestGains: interestGain,
-        timesAnnualExpenses: timesAnnualExpenses,
-        totalContributions: totalContributions,
-        totalReturns: totalReturns,
-        coastFireNumber: calculateInput.coastFireNumber,
-        coastFirePlusFive: calculateInput.coastFirePlusFive,
-        coastFireMinusFive: calculateInput.coastFireMinusFive,
-        coastFireAchieved: newNetWorth >= calculateInput.coastFireNumber,
-        fireAchieved: newNetWorth >= calculateInput.fiNumber
-      }));
+
+      // Calculate dynamic Coast FIRE values for this month
+      const monthCoastFire = this.calculateCoastFireForMonth(
+        calculateInput,
+        month
+      );
+
+      monthlyForecasts.push(
+        new MonthlyForecast({
+          monthIndex: month,
+          netWorth: newNetWorth,
+          lastMonthNetWorth: currentNetWorth,
+          contribution: contribution,
+          interestGains: interestGain,
+          timesAnnualExpenses: timesAnnualExpenses,
+          totalContributions: totalContributions,
+          totalReturns: totalReturns,
+          coastFireNumber: monthCoastFire.coastFireNumber,
+          coastFirePlusFive: monthCoastFire.coastFirePlusFive,
+          coastFireMinusFive: monthCoastFire.coastFireMinusFive,
+          coastFireAchieved: newNetWorth >= monthCoastFire.coastFireNumber,
+          fireAchieved: newNetWorth >= calculateInput.fiNumber,
+        })
+      );
       currentNetWorth = newNetWorth;
     }
     this.monthlyForecasts = monthlyForecasts;
   }
 
+  private calculateCoastFireForMonth(
+    calculateInput: CalculateInput,
+    monthIndex: number
+  ): {
+    coastFireNumber: number;
+    coastFirePlusFive: number;
+    coastFireMinusFive: number;
+  } {
+    const currentAge = calculateInput.currentAge;
+    if (currentAge === 0) {
+      return {
+        coastFireNumber: calculateInput.fiNumber,
+        coastFirePlusFive: calculateInput.fiNumber,
+        coastFireMinusFive: calculateInput.fiNumber,
+      };
+    }
+
+    // Calculate age at this month (accounting for months passed)
+    const ageAtThisMonth = currentAge + monthIndex / 12;
+
+    // Standard retirement age
+    const yearsToRetirement = calculateInput.retirementAge - ageAtThisMonth;
+    let coastFireNumber = calculateInput.fiNumber;
+    if (yearsToRetirement > 0) {
+      coastFireNumber =
+        calculateInput.fiNumber /
+        Math.pow(
+          1 + calculateInput.expectedAnnualGrowthRate,
+          yearsToRetirement
+        );
+    }
+
+    // Retirement age + 5 years
+    const yearsToRetirementPlusFive =
+      calculateInput.retirementAge + 5 - ageAtThisMonth;
+    let coastFirePlusFive = calculateInput.fiNumber;
+    if (yearsToRetirementPlusFive > 0) {
+      coastFirePlusFive =
+        calculateInput.fiNumber /
+        Math.pow(
+          1 + calculateInput.expectedAnnualGrowthRate,
+          yearsToRetirementPlusFive
+        );
+    }
+
+    // Retirement age - 5 years
+    const yearsToRetirementMinusFive =
+      calculateInput.retirementAge - 5 - ageAtThisMonth;
+    let coastFireMinusFive = calculateInput.fiNumber;
+    if (yearsToRetirementMinusFive > 0) {
+      coastFireMinusFive =
+        calculateInput.fiNumber /
+        Math.pow(
+          1 + calculateInput.expectedAnnualGrowthRate,
+          yearsToRetirementMinusFive
+        );
+    }
+
+    return {
+      coastFireNumber: round(coastFireNumber),
+      coastFirePlusFive: round(coastFirePlusFive),
+      coastFireMinusFive: round(coastFireMinusFive),
+    };
+  }
+
   private setDates() {
     const firstMonth = this.month0Date.getMonth();
-    this.monthlyForecasts.forEach(monthlyForecast => {
+    this.monthlyForecasts.forEach((monthlyForecast) => {
       const forecastDate = new Date(this.month0Date);
       forecastDate.setMonth(firstMonth + monthlyForecast.monthIndex);
       monthlyForecast.date = forecastDate;
     });
   }
-
 }
 
 export class MonthlyForecast {
@@ -141,6 +228,9 @@ export class MonthlyForecast {
   }
 
   public toDateString() {
-    return this.date.toLocaleString('en-us', { month: 'long', year: 'numeric' });
+    return this.date.toLocaleString('en-us', {
+      month: 'long',
+      year: 'numeric',
+    });
   }
 }
