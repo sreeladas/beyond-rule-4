@@ -10,10 +10,11 @@ export class CalculateInput {
   monthlyContribution = 0;
   leanFiPercentage = 0;
   budgetCategoryGroups = [];
-  currencyIsoCode = 'USD';
+  currencyIsoCode = 'CAD';
   monthFromName = '';
   monthToName = '';
   birthdate: Birthdate = null;
+  retirementAge = 60;
 
   public constructor(init?: Partial<CalculateInput>) {
     Object.assign(
@@ -36,6 +37,7 @@ export class CalculateInput {
     this.monthlyContribution = round(this.monthlyContribution);
     this.leanFiPercentage = round(this.leanFiPercentage);
     this.leanAnnualExpenses = round(this.leanAnnualExpenses);
+    this.retirementAge = Math.round(this.retirementAge);
   }
 
   get safeWithdrawalTimes() {
@@ -52,5 +54,55 @@ export class CalculateInput {
       leanFiNumber = this.safeWithdrawalTimes * this.leanAnnualExpenses;
     }
     return leanFiNumber;
+  }
+
+  get currentAge(): number {
+    if (!this.birthdate || !this.birthdate.year) {
+      return 0;
+    }
+    const currentYear = new Date().getFullYear();
+    return currentYear - this.birthdate.year;
+  }
+
+  get coastFireNumber(): number {
+    const currentAge = this.currentAge;
+    if (currentAge === 0 || this.retirementAge <= currentAge) {
+      return this.fiNumber;
+    }
+    const yearsToRetirement = this.retirementAge - currentAge;
+    const futureValue =
+      this.fiNumber /
+      Math.pow(1 + this.expectedAnnualGrowthRate, yearsToRetirement);
+    return round(futureValue);
+  }
+
+  get coastFirePlusFive(): number {
+    const currentAge = this.currentAge;
+    if (currentAge === 0) {
+      return this.fiNumber;
+    }
+    const yearsToRetirement = this.retirementAge + 5 - currentAge;
+    if (yearsToRetirement <= 0) {
+      return this.fiNumber;
+    }
+    const futureValue =
+      this.fiNumber /
+      Math.pow(1 + this.expectedAnnualGrowthRate, yearsToRetirement);
+    return round(futureValue);
+  }
+
+  get coastFireMinusFive(): number {
+    const currentAge = this.currentAge;
+    if (currentAge === 0) {
+      return this.fiNumber;
+    }
+    const yearsToRetirement = this.retirementAge - 5 - currentAge;
+    if (yearsToRetirement <= 0) {
+      return this.fiNumber;
+    }
+    const futureValue =
+      this.fiNumber /
+      Math.pow(1 + this.expectedAnnualGrowthRate, yearsToRetirement);
+    return round(futureValue);
   }
 }

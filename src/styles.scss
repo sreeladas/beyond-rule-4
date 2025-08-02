@@ -1,12 +1,36 @@
 @import 'bootswatch/dist/flatly/variables';
 $enable-rfs: false; // Disable responsive font sizes
 
+/// MUI-inspired palette mappings (override Bootswatch defaults)
+$success: hsl(140, 60%, 20%);
+$brand-100: hsl(210, 100%, 92%);
+$brand-200: hsl(210, 100%, 80%);
+$brand-300: hsl(210, 100%, 65%);
+$brand-400: hsl(210, 98%, 48%);
+$brand-500: hsl(210, 100%, 44%);
+$brand-600: hsl(210, 100%, 39%);
+$brand-700: hsl(210, 100%, 35%);
+$brand-800: hsl(210, 100%, 21%);
+$brand-900: hsl(210, 100%, 16%);
+
+
+$gray-50: hsl(220, 35%, 97%);
+$gray-100: hsl(220, 30%, 94%);
+$gray-200: hsl(220, 20%, 88%);
+$gray-300: hsl(220, 20%, 80%);
+$gray-400: hsl(220, 20%, 65%);
+$gray-500: hsl(220, 20%, 42%);
+$gray-600: hsl(220, 20%, 35%);
+$gray-700: hsl(220, 20%, 25%);
+$gray-800: hsl(220, 30%, 6%);
+$gray-900: hsl(220, 35%, 3%);
+
 $link-decoration: none;
 $link-hover-decoration: underline;
-$link-color-dark: $success;
+$link-color-dark: $brand-300;
 
+// Restore Bootstrap 4 container widths
 $container-max-widths: (
-  // Restore Bootstrap 4 container widths
   sm: 540px,
   md: 720px,
   lg: 960px,
@@ -15,33 +39,50 @@ $container-max-widths: (
 
 $accordion-padding-y: 8px;
 $accordion-padding-x: 20px;
-$accordion-button-color: $success;
-$accordion-button-active-color: $success;
+$accordion-button-color: $brand-300;
+$accordion-button-active-color: $brand-300;
 $accordion-button-bg: var(--bs-accordion-button-bg);
 $accordion-button-active-bg: var(--bs-accordion-button-active-bg);
 $accordion-icon-width: 16px;
-$accordion-icon-color: $success;
-$accordion-icon-active-color: $success;
-$accordion-icon-color-dark: $success;
-$accordion-icon-active-color-dark: $success;
+$accordion-icon-color: $brand-300;
+$accordion-icon-active-color: $brand-300;
+$accordion-icon-color-dark: $brand-300;
+$accordion-icon-active-color-dark: $brand-300;
 $accordion-icon-transition: none;
 $accordion-icon-transform: none;
 
-$accordion-button-icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' fill='#{$accordion-icon-active-color}'><path d='M384 480c35.3 0 64-28.7 64-64l0-320c0-35.3-28.7-64-64-64L64 32C28.7 32 0 60.7 0 96L0 416c0 35.3 28.7 64 64 64l320 0zM224 352c-6.7 0-13-2.8-17.6-7.7l-104-112c-6.5-7-8.2-17.2-4.4-25.9s12.5-14.4 22-14.4l208 0c9.5 0 18.2 5.7 22 14.4s2.1 18.9-4.4 25.9l-104 112c-4.5 4.9-10.9 7.7-17.6 7.7z'/></svg>");
-$accordion-button-active-icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' fill='#{$accordion-icon-active-color}'><path d='M64 32C28.7 32 0 60.7 0 96L0 416c0 35.3 28.7 64 64 64l320 0c35.3 0 64-28.7 64-64l0-320c0-35.3-28.7-64-64-64L64 32zM224 160c6.7 0 13 2.8 17.6 7.7l104 112c6.5 7 8.2 17.2 4.4 25.9s-12.5 14.4-22 14.4l-208 0c-9.5 0-18.2-5.7-22-14.4s-2.1-18.9 4.4-25.9l104-112c4.5-4.9 10.9-7.7 17.6-7.7z'/></svg>");
-
+$accordion-button-icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' fill='#{$brand-300}'><path d='M384 480c35.3 0 64-28.7 64-64l0-320c0-35.3-28.7-64-64-64L64 32C28.7 32 0 60.7 0 96L0 416c0 35.3 28.7 64 64 64l320 0zM224 352c-6.7 0-13-2.8-17.6-7.7l-104-112c-6.5-7-8.2-17.2-4.4-25.9s12.5-14.4 22-14.4l208 0c9.5 0 18.2 5.7 22 14.4s2.1 18.9-4.4 25.9l-104 112c-4.5 4.9-10.9 7.7-17.6 7.7z'/></svg>");
+$accordion-button-active-icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' fill='#{$brand-300}'><path d='M64 32C28.7 32 0 60.7 0 96L0 416c0 35.3 28.7 64 64 64l320 0c35.3 0 64-28.7 64-64l0-320c0-35.3-28.7-64-64-64L64 32zM224 160c6.7 0 13 2.8 17.6 7.7l104 112c6.5 7 8.2 17.2 4.4 25.9s-12.5 14.4-22 14.4l-208 0c-9.5 0-18.2-5.7-22-14.4s-2.1-18.9 4.4-25.9l104-112c4.5-4.9 10.9-7.7 17.6-7.7z'/></svg>");
 $accordion-button-icon-dark: $accordion-button-icon;
 $accordion-button-active-icon-dark: $accordion-button-active-icon;
 
 :root {
-  --bs-accordion-button-bg: #{$gray-100};
-  --bs-accordion-button-active-bg: #{$gray-100};
+  --bs-accordion-button-bg: #{$brand-100};
+  --bs-accordion-button-active-bg: #{$brand-100};
+  --bs-body-bg: hsl(0, 0%, 99%);
+  --bs-body-color: #{$brand-800};
+  --bs-brand-100: #{$brand-100};
+  --bs-brand-200: #{$brand-200};
+  --bs-brand-300: #{$brand-300};
+  --bs-brand-400: #{$brand-400};
+  --bs-brand-500: #{$brand-500};
+  --bs-brand-600: #{$brand-600};
+  --bs-brand-700: #{$brand-700};
+  --bs-brand-800: #{$brand-800};
+  --bs-brand-900: #{$brand-900};
 }
 
 [data-bs-theme='dark'] {
-  --bs-accordion-button-bg: #{$gray-800};
-  --bs-accordion-button-active-bg: #{$gray-800};
+  --bs-accordion-button-bg: #{$brand-800};
+  --bs-accordion-button-active-bg: #{$brand-800};
+  --bs-body-bg: $brand-900;
+  --bs-body-color: hsl(0, 0%, 100%);
 }
+
+// legacy dark-mode support vars
+$dark-bg: rgb(25, 25, 25);
+$dark-bg-focus: black;
+$text-color-dark: white;
 
 $web-font-path: false;
 
@@ -60,17 +101,16 @@ $web-font-path: false;
 /* Global styles and imports */
 $font-stack: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
   Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
-$dark-bg: rgb(25, 25, 25);
-$dark-bg-focus: black;
-$text-color-dark: white;
-
-.giant-icon {
-  font-size: 10rem;
-}
 
 body {
   font-family: $font-stack;
   font-size: 0.9375rem;
+  background: var(--bs-body-bg);
+  color: var(--bs-body-color);
+}
+
+.giant-icon {
+  font-size: 10rem;
 }
 
 @media (prefers-color-scheme: dark) {

@@ -1,6 +1,19 @@
 <div class="row" *ngIf="calculateInput else loading">
   <div class="col">
+    <!-- FIRE Dashboard -->
     <div class="row">
+      <app-fire-dashboard class="col" [calculateInput]="calculateInput" [forecast]="forecast">
+      </app-fire-dashboard>
+    </div>
+    
+    <!-- Projection Chart -->
+    <div class="row mt-4">
+      <app-projection-chart class="col" [calculateInput]="calculateInput" [forecast]="forecast">
+      </app-projection-chart>
+    </div>
+    
+    <!-- Existing Components -->
+    <div class="row mt-4">
       <app-fi-text class="col" [calculateInput]="calculateInput" [forecast]="forecast">
       </app-fi-text>
     </div>

@@ -5,6 +5,8 @@ import { ForecastingOutputComponent } from './output.component';
 import { MilestonesModule } from './milestones/milestones.module';
 import { FiTextModule } from './fi-text/fi-text.module';
 import { ImpactModule } from './impact/impact.module';
+import { FireDashboardComponent } from './fire-dashboard/fire-dashboard.component';
+import { ProjectionChartComponent } from './charts/projection-chart.component';
 
 @NgModule({
   imports: [
@@ -14,7 +16,11 @@ import { ImpactModule } from './impact/impact.module';
     ImpactModule
   ],
   exports: [ForecastingOutputComponent],
-  declarations: [ForecastingOutputComponent],
+  declarations: [
+    ForecastingOutputComponent,
+    FireDashboardComponent,
+    ProjectionChartComponent
+  ],
   providers: [],
 })
 export class OutputModule { }

@@ -1,0 +1,107 @@
+<div *ngIf="calculateInput">
+  <h3 class="fw-bolder">Coast FIRE Investment Projection</h3>
+  <!-- Main FIRE Alert -->
+  <div class="alert brand-primary-alert mb-3">
+    <h4 class="fw-light">FIRE Targets</h4>
+    <div class="row">
+      <div class="col-md-4 mb-2">
+        <h5 class="fw-light">Annual Expenses</h5>
+        <h4>
+          <strong>{{ formatCurrency(calculateInput.annualExpenses) }}</strong>
+        </h4>
+      </div>
+      <div class="col-md-4 mb-2">
+        <h5 class="fw-light">FIRE Number</h5>
+        <h4>
+          <strong>{{ formatCurrency(calculateInput.fiNumber) }}</strong>
+        </h4>
+      </div>
+      <div class="col-md-4 mb-2">
+        <h5 class="fw-light">
+          Coast FIRE (age {{ calculateInput.retirementAge }})
+        </h5>
+        <h4>
+          <strong>{{ formatCurrency(calculateInput.coastFireNumber) }}</strong>
+        </h4>
+      </div>
+    </div>
+  </div>
+
+  <!-- Coast FIRE Scenarios Alert -->
+  <div class="alert brand-primary-alert mb-3">
+    <h4 class="fw-light">Coast FIRE Scenarios</h4>
+    <div class="row">
+      <div class="col-md-4 mb-2">
+        <h5 class="fw-light">Conservative (+5 years)</h5>
+        <h4>
+          <strong>{{
+            formatCurrency(calculateInput.coastFirePlusFive)
+          }}</strong>
+        </h4>
+        <small class="fw-light"
+          >Retire at age {{ calculateInput.retirementAge + 5 }}</small
+        >
+      </div>
+      <div class="col-md-4 mb-2">
+        <h5 class="fw-light">Baseline</h5>
+        <h4>
+          <strong>{{ formatCurrency(calculateInput.coastFireNumber) }}</strong>
+        </h4>
+        <small class="fw-light"
+          >Retire at age {{ calculateInput.retirementAge }}</small
+        >
+      </div>
+      <div class="col-md-4 mb-2">
+        <h5 class="fw-light">Aggressive (-5 years)</h5>
+        <h4>
+          <strong>{{
+            formatCurrency(calculateInput.coastFireMinusFive)
+          }}</strong>
+        </h4>
+        <small class="fw-light"
+          >Retire at age {{ calculateInput.retirementAge - 5 }}</small
+        >
+      </div>
+    </div>
+  </div>
+
+  <!-- Achievement Dates Alert -->
+  <div
+    class="alert brand-secondary-alert"
+    *ngIf="
+      forecast &&
+      (coastFirePlusFiveAchievedDate ||
+        coastFireAchievedDate ||
+        coastFireMinusFiveAchievedDate ||
+        fireAchievedDate)
+    "
+  >
+    <h4 class="fw-light">Projected Achievement Dates</h4>
+    <ul class="list-inline mb-0">
+      <li class="list-inline-item" *ngIf="coastFirePlusFiveAchievedDate">
+        <h5 class="fw-light">Coast FIRE (+5y)</h5>
+        <h4>
+          <strong>{{ coastFirePlusFiveAchievedDate }}</strong>
+        </h4>
+      </li>
+      <li class="list-inline-item" *ngIf="coastFireAchievedDate">
+        <h5 class="fw-light">Coast FIRE</h5>
+        <h4>
+          <strong>{{ coastFireAchievedDate }}</strong>
+        </h4>
+      </li>
+      <li class="list-inline-item" *ngIf="coastFireMinusFiveAchievedDate">
+        <h5 class="fw-light">Coast FIRE (-5y)</h5>
+        <h4>
+          <strong>{{ coastFireMinusFiveAchievedDate }}</strong>
+        </h4>
+      </li>
+      <li class="list-inline-item" *ngIf="fireAchievedDate">
+        <h5 class="fw-light">Full FIRE</h5>
+        <h4>
+          <strong>{{ fireAchievedDate }}</strong>
+        </h4>
+      </li>
+    </ul>
+  </div>
+</div>

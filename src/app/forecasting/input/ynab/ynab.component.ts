@@ -1,5 +1,10 @@
 import { Component, OnInit, Output, EventEmitter } from '@angular/core';
-import { UntypedFormGroup, UntypedFormArray, UntypedFormBuilder, Validators } from '@angular/forms';
+import {
+  UntypedFormGroup,
+  UntypedFormArray,
+  UntypedFormBuilder,
+  Validators,
+} from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { timer } from 'rxjs';
 import { debounce } from 'rxjs/operators';
@@ -14,19 +19,20 @@ import { Birthdate } from './birthdate-utility';
 import { getSelectedMonths, QuickSelectMonthChoice } from './months-utility';
 
 @Component({
-    selector: 'app-ynab',
-    templateUrl: 'ynab.component.html',
-    styleUrls: ['./ynab.component.css'],
-    standalone: false,
+  selector: 'app-ynab',
+  templateUrl: 'ynab.component.html',
+  styleUrls: ['./ynab.component.css'],
+  standalone: false,
 })
 export class YnabComponent implements OnInit {
   @Output() calculateInputChange = new EventEmitter<CalculateInput>();
 
   budgetForm: UntypedFormGroup;
   displayContributionInfo = true;
-  currencyIsoCode = 'USD';
+  currencyIsoCode = 'CAD';
   public safeWithdrawalRatePercentage = 4.0;
   public expectedAnnualGrowthRate = 7.0;
+  public retirementAge = 60;
 
   public budgets: ynab.BudgetSummary[];
   public budget: ynab.BudgetDetail;
@@ -106,6 +112,13 @@ export class YnabComponent implements OnInit {
       this.birthdate = null;
     }
 
+    const retirementAgeStorage = parseFloat(
+      window.localStorage.getItem('br4-retirement-age')
+    );
+    if (!!retirementAgeStorage && !isNaN(retirementAgeStorage)) {
+      this.retirementAge = retirementAgeStorage;
+    }
+
     this.budgetForm = this.formBuilder.group({
       selectedBudget: ['', [Validators.required]],
       selectedMonthA: ['', [Validators.required]],
@@ -123,6 +136,10 @@ export class YnabComponent implements OnInit {
         [Validators.required, Validators.max(99.99), Validators.max(0.01)],
       ],
       birthdate: [this.birthdate, [Validators.required]],
+      retirementAge: [
+        this.retirementAge,
+        [Validators.required, Validators.min(18), Validators.max(100)],
+      ],
     });
   }
 
@@ -191,6 +208,7 @@ export class YnabComponent implements OnInit {
     result.monthFromName = this.selectedMonthA.month;
     result.monthToName = this.selectedMonthB.month;
     result.birthdate = this.birthdate;
+    result.retirementAge = this.retirementAge;
 
     result.annualSafeWithdrawalRate = Math.max(
       0,
@@ -223,7 +241,7 @@ export class YnabComponent implements OnInit {
       await this.ynabService.getCategoryGroupsWithCategories(this.budget.id);
     this.currencyIsoCode = this.budget.currency_format
       ? this.budget.currency_format.iso_code
-      : 'USD';
+      : 'CAD';
 
     this.includeHiddenYnabCategories = !!window.localStorage.getItem(
       'br4-include-hidden-ynab-categories'
@@ -321,6 +339,17 @@ export class YnabComponent implements OnInit {
         parsedExpectedAnnualGrowthRate.toString()
       );
     }
+    const parsedRetirementAge = Number.parseFloat(
+      this.budgetForm.value.retirementAge
+    );
+    if (!Number.isNaN(parsedRetirementAge)) {
+      this.retirementAge = parsedRetirementAge;
+      // local storage
+      window.localStorage.setItem(
+        'br4-retirement-age',
+        parsedRetirementAge.toString()
+      );
+    }
   }
 
   handleFormChanges() {
@@ -337,9 +366,11 @@ export class YnabComponent implements OnInit {
 
     this.handlePercentageFormChanges();
 
-    
     this.birthdate = this.budgetForm.value.birthdate;
-    window.localStorage.setItem('br4-birthdate', JSON.stringify(this.birthdate));
+    window.localStorage.setItem(
+      'br4-birthdate',
+      JSON.stringify(this.birthdate)
+    );
 
     const selectedBudget = this.budgetForm.value.selectedBudget;
     if (this.budget.id !== selectedBudget) {
@@ -470,9 +501,7 @@ export class YnabComponent implements OnInit {
       return overrides.contributionBudget;
     }
 
-    if (
-      account.type === ynab.AccountType.OtherAsset
-    ) {
+    if (account.type === ynab.AccountType.OtherAsset) {
       return ynabBalance;
     }
 
@@ -536,7 +565,8 @@ export class YnabComponent implements OnInit {
       monthlyContribution,
       expectedAnnualGrowthRate: this.expectedAnnualGrowthRate,
       safeWithdrawalRatePercentage: this.safeWithdrawalRatePercentage,
-      birthdate: this.birthdate, 
+      birthdate: this.birthdate,
+      retirementAge: this.retirementAge,
     });
 
     const categoryGroupFormGroups = categoriesDisplay.map((cg) =>

@@ -1,4 +1,4 @@
-<div class="alert alert-dark fw-bold" *ngIf="isUsingSampleData">
+<div class="alert brand-secondary-alert fw-bold" *ngIf="isUsingSampleData">
   <fa-icon [icon]="['fas', 'info-circle']"></fa-icon>
   Using Sample Data
 </div>
@@ -292,6 +292,33 @@
                       ></button>
                     </div>
                   </div>
+                </div>
+              </div>
+              <div class="row mb-3">
+                <label
+                  for="retirementAge"
+                  class="col-sm-12 col-md-5 col-form-label"
+                  >Target Retirement Age</label
+                >
+                <div class="col">
+                  <div class="input-group">
+                    <input
+                      type="number"
+                      class="form-control"
+                      id="retirementAge"
+                      formControlName="retirementAge"
+                      min="18"
+                      max="100"
+                      step="1"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div class="row mb-3">
+                <div class="col">
+                  <small class="form-text text-muted">
+                    Age you plan to retire (used for Coast FIRE calculations)
+                  </small>
                 </div>
               </div>
             </div>

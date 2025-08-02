@@ -1,0 +1,11 @@
+services:
+  br4:
+    image: br4
+    build: .
+    ports:
+      - "8080:80"
+    environment:
+      APP_URL: "http://localhost:8080"
+      CLIENT_ID: "<CLIENT_ID_FROM_YNAB>"
+    container_name: br4
+    restart: unless-stopped

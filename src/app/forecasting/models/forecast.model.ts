@@ -73,7 +73,12 @@ export class Forecast {
       interestGains: 0,
       timesAnnualExpenses: round(startingNetWorth / annualExpenses),
       totalContributions: totalContributions,
-      totalReturns: 0
+      totalReturns: 0,
+      coastFireNumber: calculateInput.coastFireNumber,
+      coastFirePlusFive: calculateInput.coastFirePlusFive,
+      coastFireMinusFive: calculateInput.coastFireMinusFive,
+      coastFireAchieved: startingNetWorth >= calculateInput.coastFireNumber,
+      fireAchieved: startingNetWorth >= calculateInput.fiNumber
     })];
     while (currentNetWorth < stopForecastingAmount && month < 1000) {
       const contribution = calculateInput.monthlyContribution;
@@ -91,7 +96,12 @@ export class Forecast {
         interestGains: interestGain,
         timesAnnualExpenses: timesAnnualExpenses,
         totalContributions: totalContributions,
-        totalReturns: totalReturns
+        totalReturns: totalReturns,
+        coastFireNumber: calculateInput.coastFireNumber,
+        coastFirePlusFive: calculateInput.coastFirePlusFive,
+        coastFireMinusFive: calculateInput.coastFireMinusFive,
+        coastFireAchieved: newNetWorth >= calculateInput.coastFireNumber,
+        fireAchieved: newNetWorth >= calculateInput.fiNumber
       }));
       currentNetWorth = newNetWorth;
     }
@@ -120,6 +130,11 @@ export class MonthlyForecast {
   timesAnnualExpenses: number;
   totalContributions: number;
   totalReturns: number;
+  coastFireNumber: number;
+  coastFirePlusFive: number;
+  coastFireMinusFive: number;
+  coastFireAchieved: boolean;
+  fireAchieved: boolean;
 
   public constructor(init?: Partial<MonthlyForecast>) {
     Object.assign(this, init);

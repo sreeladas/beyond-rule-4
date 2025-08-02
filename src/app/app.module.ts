@@ -3,10 +3,6 @@ import { NgModule } from '@angular/core';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 
 import { AppRoutingModule } from './app-routing.module';
-
-import { HomeModule } from './home/home.module';
-import { AboutModule } from './about/about.module';
-import { BeyondModule } from './beyond/beyond.module';
 import { NavigationModule } from './navigation/navigation.module';
 import { ForecastingModule } from './forecasting/forecasting.module';
 import { YnabConnectModule } from './ynab-connect/ynab-connect.module';
@@ -14,26 +10,18 @@ import { YnabApiModule } from './ynab-api/ynab-api.module';
 
 import { AppComponent } from './app.component';
 
-
-
-
 @NgModule({
-  declarations: [
-    AppComponent,
-  ],
+  declarations: [AppComponent],
   imports: [
     BrowserModule,
     NgbModule,
-    HomeModule,
-    AboutModule,
-    BeyondModule,
     NavigationModule,
     ForecastingModule,
     YnabConnectModule,
     YnabApiModule,
-    AppRoutingModule
+    AppRoutingModule,
   ],
   providers: [],
-  bootstrap: [AppComponent]
+  bootstrap: [AppComponent],
 })
-export class AppModule { }
+export class AppModule {}
