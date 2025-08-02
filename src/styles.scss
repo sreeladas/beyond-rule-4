@@ -11,7 +11,7 @@ $brand-500: hsl(210, 100%, 44%);
 $brand-600: hsl(210, 100%, 39%);
 $brand-700: hsl(210, 100%, 35%);
 $brand-800: hsl(210, 100%, 21%);
-$brand-900: hsl(210, 100%, 16%);
+$brand-900: hsl(210, 100%, 9%);
 
 
 $gray-50: hsl(220, 35%, 97%);
@@ -112,6 +112,11 @@ body {
 .giant-icon {
   font-size: 10rem;
 }
+
+.bg-brand-900 {
+  background-color: var(--bs-brand-900) !important;
+}
+
 
 @media (prefers-color-scheme: dark) {
   .ngx-charts {

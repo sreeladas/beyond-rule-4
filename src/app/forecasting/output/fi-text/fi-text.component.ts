@@ -15,6 +15,7 @@ import { Forecast, MonthlyForecast } from '../../models/forecast.model';
   selector: 'app-fi-text',
   templateUrl: 'fi-text.component.html',
   standalone: false,
+  styleUrls: ['fi-text.component.css'],
 })
 export class FiTextComponent implements OnInit, OnChanges {
   @Input() calculateInput: CalculateInput;
@@ -78,9 +79,13 @@ export class FiTextComponent implements OnInit, OnChanges {
         this.forecast.getDistanceFromFirstMonthText(foundFiForecast.date) ||
         '0 Months';
       this.fiMonthForecast = foundFiForecast;
-      this.fiAge = birthdate && !isNaN(birthdate.getTime())
-        ? this.forecast.getDistanceFromDateText(foundFiForecast.date, birthdate)
-        : null;
+      this.fiAge =
+        birthdate && !isNaN(birthdate.getTime())
+          ? this.forecast.getDistanceFromDateText(
+              foundFiForecast.date,
+              birthdate
+            )
+          : null;
     }
 
     const foundLeanFiForecast = this.forecast.monthlyForecasts.find(
@@ -95,12 +100,13 @@ export class FiTextComponent implements OnInit, OnChanges {
       this.leanFiDateDistance =
         this.forecast.getDistanceFromFirstMonthText(foundLeanFiForecast.date) ||
         '0 Months';
-      this.leanFiAge = birthdate && !isNaN(birthdate.getTime())
-        ? this.forecast.getDistanceFromDateText(
-            foundLeanFiForecast.date,
-            birthdate
-          )
-        : null;
+      this.leanFiAge =
+        birthdate && !isNaN(birthdate.getTime())
+          ? this.forecast.getDistanceFromDateText(
+              foundLeanFiForecast.date,
+              birthdate
+            )
+          : null;
     }
   }
 }

@@ -3,19 +3,6 @@
   margin-right: 2rem;
 }
 
-/* Custom brand color alerts */
-.brand-primary-alert {
-  background-color: var(--bs-brand-100);
-  border-color: var(--bs-brand-300);
-  color: var(--bs-brand-800);
-}
-
-.brand-secondary-alert {
-  background-color: var(--bs-brand-200);
-  border-color: var(--bs-brand-400);
-  color: var(--bs-brand-800);
-}
-
 @media (max-width: 768px) {
   .list-inline-item {
     margin-right: 0;

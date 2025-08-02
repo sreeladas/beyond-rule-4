@@ -6,21 +6,11 @@ import { MilestonesModule } from './milestones/milestones.module';
 import { FiTextModule } from './fi-text/fi-text.module';
 import { ImpactModule } from './impact/impact.module';
 import { FireDashboardComponent } from './fire-dashboard/fire-dashboard.component';
-import { ProjectionChartComponent } from './charts/projection-chart.component';
 
 @NgModule({
-  imports: [
-    SharedModule,
-    MilestonesModule,
-    FiTextModule,
-    ImpactModule
-  ],
+  imports: [SharedModule, MilestonesModule, FiTextModule, ImpactModule],
   exports: [ForecastingOutputComponent],
-  declarations: [
-    ForecastingOutputComponent,
-    FireDashboardComponent,
-    ProjectionChartComponent
-  ],
+  declarations: [ForecastingOutputComponent, FireDashboardComponent],
   providers: [],
 })
-export class OutputModule { }
+export class OutputModule {}

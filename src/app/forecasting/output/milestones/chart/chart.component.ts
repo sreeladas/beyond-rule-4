@@ -230,16 +230,16 @@ export class ChartComponent implements OnInit, AfterContentInit, OnChanges {
           series: fireNumberLine,
         },
         {
+          name: 'Coast FIRE (-5y)',
+          series: coastFireMinusFiveLine,
+        },
+        {
           name: 'Coast FIRE',
           series: coastFireLine,
         },
         {
           name: 'Coast FIRE (+5y)',
           series: coastFirePlusFiveLine,
-        },
-        {
-          name: 'Coast FIRE (-5y)',
-          series: coastFireMinusFiveLine,
         }
       );
 

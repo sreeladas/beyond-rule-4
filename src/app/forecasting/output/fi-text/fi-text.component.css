@@ -1,0 +1,6 @@
+/* Custom brand color alerts */
+.brand-primary-alert {
+  background-color: var(--bs-brand-200);
+  border-color: var(--bs-brand-400);
+  color: var(--bs-brand-800);
+}

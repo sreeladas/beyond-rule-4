@@ -1,5 +1,5 @@
 <div class="mb-3">
-  <div class="alert alert-success">
+  <div class="alert brand-primary-alert">
     <h4 class="fw-light">FI Date</h4>
     <h2>
       <strong>{{ fiDate }}</strong> • {{ dateDistance }}
@@ -12,8 +12,11 @@
       </li>
       <li class="list-inline-item"></li>
       <li class="list-inline-item">
-        <h4>{{ leanFiDate }} • {{ leanFiDateDistance }}
-          <span *ngIf="leanFiAge !== null" class="fst-italic">• {{ leanFiAge }} old</span>
+        <h4>
+          {{ leanFiDate }} • {{ leanFiDateDistance }}
+          <span *ngIf="leanFiAge !== null" class="fst-italic"
+            >• {{ leanFiAge }} old</span
+          >
         </h4>
       </li>
     </ul>
@@ -27,7 +30,8 @@
     <p>
       With annual expenses of
       <strong>{{
-        calculateInput.annualExpenses | currency: calculateInput.currencyIsoCode
+        calculateInput.annualExpenses
+          | currency : calculateInput.currencyIsoCode
       }}</strong
       >,
       <span *ngIf="calculateInput.monthFromName != calculateInput.monthToName"
@@ -35,28 +39,30 @@
         {{ calculateInput.monthToName }},
       </span>
       we're aiming for a Net Worth of
-      <strong>{{ fiNumber | currency: calculateInput.currencyIsoCode }}</strong
+      <strong>{{ fiNumber | currency : calculateInput.currencyIsoCode }}</strong
       >.
     </p>
     <p>
       At <strong>{{ expectedAnnualGrowthRate }}%</strong> returns, that Net
       Worth is forecasted to be <strong>{{ fiDate }}</strong
       >; {{ dateDistance }} from the first month.
-      <span *ngIf="fiAge !== null">You'll be <strong>{{ fiAge }}</strong> old at that time.</span>
+      <span *ngIf="fiAge !== null"
+        >You'll be <strong>{{ fiAge }}</strong> old at that time.</span
+      >
       <span *ngIf="fiMonthForecast">
         By that point, Net Worth is at
         <strong>{{
-          fiMonthForecast.netWorth | currency: calculateInput.currencyIsoCode
+          fiMonthForecast.netWorth | currency : calculateInput.currencyIsoCode
         }}</strong
         >. Of that total, contributions account for
         <strong>{{
           fiMonthForecast.totalContributions
-            | currency: calculateInput.currencyIsoCode
+            | currency : calculateInput.currencyIsoCode
         }}</strong>
         while
         <strong>{{
           fiMonthForecast.totalReturns
-            | currency: calculateInput.currencyIsoCode
+            | currency : calculateInput.currencyIsoCode
         }}</strong>
         is earned returns.
       </span>

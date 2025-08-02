@@ -10,4 +10,4 @@ import { FiTextComponent } from './fi-text.component';
   declarations: [FiTextComponent],
   providers: [],
 })
-export class FiTextModule { }
+export class FiTextModule {}
