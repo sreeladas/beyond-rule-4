@@ -24,7 +24,7 @@ export class YnabApiService {
   authorize() {
     const uri =
       // eslint-disable-next-line max-len
-      `https://app.youneedabudget.com/oauth/authorize?client_id=${environment.clientId}&redirect_uri=${environment.redirectUri}&response_type=token&scope=read-only`;
+      `https://app.ynab.com/oauth/authorize?client_id=${environment.clientId}&redirect_uri=${environment.redirectUri}&response_type=token&scope=read-only`;
     location.replace(uri);
   }
 
@@ -113,7 +113,9 @@ export class YnabApiService {
 
     const month = await this.ynabApi.months.getBudgetMonth(
       budgetId,
-      budgetMonth instanceof Date ? budgetMonth.toISOString().substring(0, 10) : budgetMonth
+      budgetMonth instanceof Date
+        ? budgetMonth.toISOString().substring(0, 10)
+        : budgetMonth
     );
     return month.data.month;
   }
