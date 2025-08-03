@@ -8,5 +8,5 @@ import { Component, ViewEncapsulation } from '@angular/core';
     standalone: false
 })
 export class AppComponent {
-
+  isPrivacyCollapsed = true;
 }

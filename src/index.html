@@ -28,10 +28,6 @@
     <!-- Load environment variables -->
     <script src="assets/env.js"></script>
 
-    <script
-      async
-      src="https://www.googletagmanager.com/gtag/js?id=G-N0REZM6WE6"
-    ></script>
     <script>
       if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
         document.documentElement.setAttribute('data-bs-theme', 'dark');
@@ -44,16 +40,6 @@
           .querySelector('#manifest-placeholder')
           .setAttribute('href', '/assets/site.webmanifest');
       }
-      window.dataLayer = window.dataLayer || [];
-      function gtag() {
-        if (!navigator || !navigator.doNotTrack) {
-          return;
-        }
-        dataLayer.push(arguments);
-      }
-      gtag('js', new Date());
-
-      gtag('config', 'G-N0REZM6WE6', { anonymize_ip: true });
     </script>
   </head>
 

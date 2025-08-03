@@ -27,6 +27,11 @@
     [ngClass]="{ collapse: !isOpen }"
     id="navbarSupportedContent"
   >
+    <ul class="navbar-nav me-auto">
+      <li class="nav-item">
+        <a class="nav-link" href="#privacy-policy">Privacy Policy</a>
+      </li>
+    </ul>
     <form class="form-inline ms-auto my-2 my-lg-0">
       <button
         *ngIf="!isAuthorized"

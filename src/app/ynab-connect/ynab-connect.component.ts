@@ -3,24 +3,16 @@ import { Router } from '@angular/router';
 
 import { YnabApiService } from '../ynab-api/ynab-api.service';
 
-declare var gtag: any;
-
 @Component({
-    selector: 'app-ynab-connect',
-    templateUrl: 'ynab-connect.component.html',
-    standalone: false
+  selector: 'app-ynab-connect',
+  templateUrl: 'ynab-connect.component.html',
+  standalone: false,
 })
-
 export class YnabConnectComponent implements OnInit {
-  constructor(private ynabApiService: YnabApiService, private router: Router) { }
+  constructor(private ynabApiService: YnabApiService, private router: Router) {}
 
   ngOnInit() {
     if (this.ynabApiService.findYnabToken()) {
-      if (gtag) {
-        gtag('event', 'authorize', {
-          'event_category': 'YNAB Connect'
-        });
-      }
       this.router.navigate(['/forecasting']);
     }
   }
