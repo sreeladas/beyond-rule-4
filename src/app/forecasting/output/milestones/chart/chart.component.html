@@ -1,25 +1,55 @@
 <div #chartContainer class="chart-container">
-  <ngx-charts-line-chart [view]="view" [scheme]="colorScheme" [results]="data" [gradient]="gradient"
-    [timeline]="timeline" [xAxis]="showXAxis" [yAxis]="showYAxis" [legend]="showLegend"
-    [showXAxisLabel]="showXAxisLabel" [showYAxisLabel]="showYAxisLabel" [referenceLines]="referenceLines"
-    [showRefLines]="'true'" [xAxisLabel]="xAxisLabel" [yAxisLabel]="yAxisLabel" [autoScale]="true"
-    [yAxisTickFormatting]="yAxisTickFormattingFn">
-
+  <ngx-charts-line-chart
+    [view]="view"
+    [scheme]="colorScheme"
+    [results]="filteredData"
+    [gradient]="gradient"
+    [timeline]="timeline"
+    [xAxis]="showXAxis"
+    [yAxis]="showYAxis"
+    [showXAxisLabel]="showXAxisLabel"
+    [showYAxisLabel]="showYAxisLabel"
+    [referenceLines]="referenceLines"
+    [showRefLines]="'true'"
+    [xAxisLabel]="xAxisLabel"
+    [yAxisLabel]="yAxisLabel"
+    [autoScale]="true"
+    [yAxisTickFormatting]="yAxisTickFormattingFn"
+    [legend]="false"
+  >
     <ng-template #tooltipTemplate let-model="model">
-      <span class="tooltip-label">{{getToolTipDate(model)}}</span>
-      <span class="tooltip-val">{{getToolTipText(model)}}</span>
+      <span class="tooltip-label">{{ getToolTipDate(model) }}</span>
+      <span class="tooltip-val">{{ getToolTipText(model) }}</span>
     </ng-template>
 
     <ng-template #seriesTooltipTemplate let-model="model">
       <div class="area-tooltip-container">
-        <div>{{getToolTipDate(model[0])}}</div>
+        <div>{{ getToolTipDate(model[0]) }}</div>
         <div *ngFor="let tooltipItem of model" class="tooltip-item">
-          <span class="tooltip-item-color" [style.background-color]="tooltipItem.color">
+          <span
+            class="tooltip-item-color"
+            [style.background-color]="tooltipItem.color"
+          >
           </span>
-          {{getToolTipText(tooltipItem)}}
+          {{ getToolTipText(tooltipItem) }}
         </div>
       </div>
     </ng-template>
-
   </ngx-charts-line-chart>
+
+  <!-- Custom Legend -->
+  <div class="custom-legend" *ngIf="data && data.length > 0">
+    <div
+      class="legend-item"
+      *ngFor="let series of data"
+      (click)="onLegendLabelClick(series)"
+      [class.hidden]="isSeriesHidden(series.name)"
+    >
+      <span
+        class="legend-color"
+        [style.background-color]="getSeriesColor(series.name)"
+      ></span>
+      <span class="legend-label">{{ series.name }}</span>
+    </div>
+  </div>
 </div>

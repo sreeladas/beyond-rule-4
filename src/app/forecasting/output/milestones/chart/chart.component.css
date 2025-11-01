@@ -4,3 +4,60 @@
   min-height: 300px;
   min-width: 300px;
 }
+
+/* Custom Legend Styles */
+.custom-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 16px;
+  padding: 12px;
+  background-color: var(--bs-gray-50);
+  border-radius: 8px;
+  position: relative;
+  z-index: 1000;
+  clear: both;
+}
+
+[data-bs-theme='dark'] .custom-legend {
+  background-color: var(--bs-gray-800);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.legend-item:hover {
+  background-color: var(--bs-gray-100);
+}
+
+[data-bs-theme='dark'] .legend-item:hover {
+  background-color: var(--bs-gray-700);
+}
+
+.legend-item.hidden {
+  opacity: 0.5;
+}
+
+.legend-item.hidden .legend-label {
+  text-decoration: line-through;
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.legend-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--bs-body-color);
+}

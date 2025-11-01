@@ -32,6 +32,13 @@ export class ChartComponent implements OnInit, AfterContentInit, OnChanges {
   constructor(@Inject(LOCALE_ID) private locale: string) {}
 
   data: any[];
+  filteredData: any[];
+  hiddenSeries: Set<string> = new Set([
+    'Contributions',
+    'Returns',
+    'Coast FIRE (+5y)',
+    'Coast FIRE (-5y)',
+  ]);
 
   view: any[];
 
@@ -48,16 +55,19 @@ export class ChartComponent implements OnInit, AfterContentInit, OnChanges {
   referenceLines: any[];
   public yAxisTickFormattingFn = this.yAxisTickFormatting.bind(this);
 
+  // Static color mapping by series name
+  private seriesColorMap = new Map([
+    ['Portfolio', 'hsl(210, 100%, 39%)'], // brand-600 for Portfolio
+    ['Contributions', '#A10A28'], // red for Contributions
+    ['Returns', '#C7B42C'], // gold for Returns
+    ['FIRE Number', '#e15759'], // red for FIRE Number
+    ['Coast FIRE', 'hsl(140, 64%, 43%)'], // jade green for Coast FIRE
+    ['Coast FIRE (+5y)', 'hsl(140, 54%, 33%)'], // darker jade for Coast FIRE +5y
+    ['Coast FIRE (-5y)', 'hsl(140, 74%, 53%)'], // lighter jade for Coast FIRE -5y
+  ]);
+
   colorScheme = {
-    domain: [
-      'hsl(210, 100%, 39%)', // brand-600 for Portfolio
-      '#A10A28', // red for Contributions
-      '#C7B42C', // gold for Returns
-      '#e15759', // red for FIRE Number
-      'hsl(140, 64%, 43%)', // jade green for Coast FIRE
-      'hsl(140, 54%, 33%)', // darker jade for Coast FIRE +5y
-      'hsl(140, 74%, 53%)', // lighter jade for Coast FIRE -5y
-    ],
+    domain: [], // Will be populated dynamically
   };
 
   // line, area
@@ -89,6 +99,39 @@ export class ChartComponent implements OnInit, AfterContentInit, OnChanges {
   }
 
   onSelect($event) {}
+
+  onLegendLabelClick(entry: any) {
+    const seriesName = entry.label || entry.name;
+
+    if (this.hiddenSeries.has(seriesName)) {
+      // Show the series
+      this.hiddenSeries.delete(seriesName);
+    } else {
+      // Hide the series
+      this.hiddenSeries.add(seriesName);
+    }
+
+    this.updateFilteredData();
+  }
+
+  private updateFilteredData() {
+    this.filteredData = this.data.filter(
+      (series) => !this.hiddenSeries.has(series.name)
+    );
+
+    // Update color scheme to match filtered data with static colors
+    this.colorScheme.domain = this.filteredData.map((series) =>
+      this.getSeriesColor(series.name)
+    );
+  }
+
+  isSeriesHidden(seriesName: string): boolean {
+    return this.hiddenSeries.has(seriesName);
+  }
+
+  getSeriesColor(seriesName: string): string {
+    return this.seriesColorMap.get(seriesName) || '#5AA454'; // Default color if not found
+  }
 
   setViewDimensions() {
     if (!this.elementView) {
@@ -287,12 +330,53 @@ export class ChartComponent implements OnInit, AfterContentInit, OnChanges {
     }
 
     this.referenceLines = milestones;
+
+    // Initialize filtered data (show all series by default)
+    this.updateFilteredData();
   }
 
   private formatCurrency(val: number): string {
-    return Intl.NumberFormat(this.locale, {
+    const absVal = Math.abs(val);
+    const isNegative = val < 0;
+    const prefix = isNegative ? '-' : '';
+
+    // Get currency symbol
+    const currencySymbol = new Intl.NumberFormat(this.locale, {
       style: 'currency',
       currency: this.currencyIsoCode,
-    }).format(val);
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    })
+      .format(0)
+      .replace(/\d/g, '')
+      .trim();
+
+    if (absVal >= 1000000000) {
+      // Billions: 1.25B
+      const billions = absVal / 1000000000;
+      return `${prefix}${currencySymbol}${billions.toFixed(
+        billions >= 10 ? 1 : 2
+      )}B`;
+    } else if (absVal >= 1000000) {
+      // Millions: 1.25M
+      const millions = absVal / 1000000;
+      return `${prefix}${currencySymbol}${millions.toFixed(
+        millions >= 10 ? 1 : 2
+      )}M`;
+    } else if (absVal >= 1000) {
+      // Thousands: 980k
+      const thousands = absVal / 1000;
+      return `${prefix}${currencySymbol}${thousands.toFixed(
+        thousands >= 10 ? 0 : 1
+      )}k`;
+    } else {
+      // Less than 1000: show full amount
+      return new Intl.NumberFormat(this.locale, {
+        style: 'currency',
+        currency: this.currencyIsoCode,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(val);
+    }
   }
 }

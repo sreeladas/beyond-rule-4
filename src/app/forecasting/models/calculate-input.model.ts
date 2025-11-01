@@ -15,6 +15,8 @@ export class CalculateInput {
   monthToName = '';
   birthdate: Birthdate = null;
   retirementAge = 60;
+  taxMinMultiplier: number = 1.3; // 30% tax rate adjustment
+  taxMaxMultiplier: number = 1.5; // 50% tax rate adjustment
 
   public constructor(init?: Partial<CalculateInput>) {
     Object.assign(
@@ -38,6 +40,8 @@ export class CalculateInput {
     this.leanFiPercentage = round(this.leanFiPercentage);
     this.leanAnnualExpenses = round(this.leanAnnualExpenses);
     this.retirementAge = Math.round(this.retirementAge);
+    this.taxMinMultiplier = round(this.taxMinMultiplier, 2);
+    this.taxMaxMultiplier = round(this.taxMaxMultiplier, 2);
   }
 
   get safeWithdrawalTimes() {
@@ -45,13 +49,15 @@ export class CalculateInput {
   }
 
   get fiNumber() {
-    return this.safeWithdrawalTimes * this.annualExpenses;
+    // adjusted for a 45% estimated avg tax rate
+    return this.safeWithdrawalTimes * this.annualExpenses * 1.45;
   }
 
   get leanFiNumber() {
     let leanFiNumber = this.fiNumber * this.leanFiPercentage;
     if (this.leanAnnualExpenses) {
-      leanFiNumber = this.safeWithdrawalTimes * this.leanAnnualExpenses;
+      // adjusted for a 45% estimated avg tax rate
+      leanFiNumber = this.safeWithdrawalTimes * this.leanAnnualExpenses * 1.45;
     }
     return leanFiNumber;
   }
@@ -104,5 +110,31 @@ export class CalculateInput {
       this.fiNumber /
       Math.pow(1 + this.expectedAnnualGrowthRate, yearsToRetirement);
     return round(futureValue);
+  }
+
+  get coastYearsMin(): number {
+    const targetAmount =
+      this.annualExpenses * this.taxMinMultiplier * this.safeWithdrawalTimes;
+    if (this.netWorth >= targetAmount) return 0;
+    return (
+      Math.log(targetAmount / this.netWorth) /
+      Math.log((100 + this.expectedAnnualGrowthRate * 100) / 100)
+    );
+  }
+
+  get coastYearsMax(): number {
+    const targetAmount =
+      this.annualExpenses * this.taxMaxMultiplier * this.safeWithdrawalTimes;
+    if (this.netWorth >= targetAmount) return 0;
+    return (
+      Math.log(targetAmount / this.netWorth) /
+      Math.log((100 + this.expectedAnnualGrowthRate * 100) / 100)
+    );
+  }
+
+  get coastYearsRange(): string {
+    const min = Math.round(this.coastYearsMin);
+    const max = Math.round(this.coastYearsMax);
+    return min === max ? `${min}` : `${min} - ${max}`;
   }
 }

@@ -1,43 +1,65 @@
 <div *ngIf="calculateInput">
   <h3 class="fw-bolder mb-4">Coast FIRE Investment Projection</h3>
-  
+
   <!-- FIRE Targets -->
   <div class="mb-4">
-    <h4 class="fw-light mb-3">FIRE Targets</h4>
+    <h4 class="fw-light mb-3">FIRE Numbers</h4>
     <div class="row">
-      <div class="col-md-4 mb-3">
+      <div class="col-md-3 mb-3">
         <div class="text-muted small">Annual Expenses</div>
-        <div class="h4 mb-0">{{ formatCurrency(calculateInput.annualExpenses) }}</div>
+        <div class="h4 mb-0">
+          {{ formatCurrency(calculateInput.annualExpenses) }}
+        </div>
       </div>
-      <div class="col-md-4 mb-3">
-        <div class="text-muted small">FIRE Number</div>
+      <div class="col-md-3 mb-3">
+        <div class="text-muted small">FIRE Number (Tax-Adjusted)</div>
         <div class="h4 mb-0">{{ formatCurrency(calculateInput.fiNumber) }}</div>
-      </div>
-      <div class="col-md-4 mb-3">
-        <div class="text-muted small">Coast FIRE (age {{ calculateInput.retirementAge }})</div>
-        <div class="h4 mb-0">{{ formatCurrency(calculateInput.coastFireNumber) }}</div>
       </div>
     </div>
   </div>
 
   <!-- Coast FIRE Scenarios -->
   <div class="mb-4">
-    <h4 class="fw-light mb-3">Coast FIRE Scenarios</h4>
+    <h4 class="fw-light mb-3">Coast FIRE Numbers Today</h4>
     <div class="row">
-      <div class="col-md-4 mb-3">
+      <div class="col-md-3 mb-3">
         <div class="text-muted small">Conservative (+5 years)</div>
-        <div class="h4 mb-1">{{ formatCurrency(calculateInput.coastFirePlusFive) }}</div>
-        <div class="small text-muted">Retire at age {{ calculateInput.retirementAge + 5 }}</div>
+        <div class="h4 mb-1">
+          {{ formatCurrency(calculateInput.coastFirePlusFive) }}
+        </div>
+        <div class="small text-muted">
+          Retire at age {{ calculateInput.retirementAge + 5 }}
+        </div>
       </div>
-      <div class="col-md-4 mb-3">
+      <div class="col-md-3 mb-3">
         <div class="text-muted small">Baseline</div>
-        <div class="h4 mb-1">{{ formatCurrency(calculateInput.coastFireNumber) }}</div>
-        <div class="small text-muted">Retire at age {{ calculateInput.retirementAge }}</div>
+        <div class="h4 mb-1">
+          {{ formatCurrency(calculateInput.coastFireNumber) }}
+        </div>
+        <div class="small text-muted">
+          Retire at age {{ calculateInput.retirementAge }}
+        </div>
       </div>
-      <div class="col-md-4 mb-3">
+      <div class="col-md-3 mb-3">
         <div class="text-muted small">Aggressive (-5 years)</div>
-        <div class="h4 mb-1">{{ formatCurrency(calculateInput.coastFireMinusFive) }}</div>
-        <div class="small text-muted">Retire at age {{ calculateInput.retirementAge - 5 }}</div>
+        <div class="h4 mb-1">
+          {{ formatCurrency(calculateInput.coastFireMinusFive) }}
+        </div>
+        <div class="small text-muted">
+          Retire at age {{ calculateInput.retirementAge - 5 }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Coast Years Analysis -->
+  <div class="mb-4">
+    <h4 class="fw-light mb-3">Coast Years Analysis</h4>
+    <div class="row">
+      <div class="col-md-3 mb-3">
+        <div class="text-muted small">Coast Working Years</div>
+        <div class="h4 mb-0">{{ calculateInput.coastYearsRange }}</div>
+        <div class="small text-muted">Based on current portfolio</div>
       </div>
     </div>
   </div>
