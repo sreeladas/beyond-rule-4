@@ -48,6 +48,7 @@ export class YnabComponent implements OnInit {
   public categoriesDisplay: any;
   public monthlyExpenses: number;
   public leanMonthlyExpenses: number;
+  public contributionAdjustments: any[] = [];
   public expenses: {
     ynab: {
       monthly: number;
@@ -162,6 +163,7 @@ export class YnabComponent implements OnInit {
     });
 
     this.budgets = await this.ynabService.getBudgets();
+    this.contributionAdjustments = this.loadContributionAdjustments();
 
     const budgetId = this.setInitialSelectedBudget();
     await this.selectBudget(budgetId);
@@ -198,6 +200,8 @@ export class YnabComponent implements OnInit {
       },
     };
 
+    const taxRatios = this.calculateTaxRatios();
+
     const result = new CalculateInput();
     result.annualExpenses = this.expenses.fi.annual;
     result.leanAnnualExpenses = this.expenses.leanFi.annual;
@@ -219,8 +223,108 @@ export class YnabComponent implements OnInit {
       this.expectedAnnualGrowthRate / 100
     );
 
+    if (taxRatios) {
+      result.taxFreeRatio = taxRatios.taxFreeRatio;
+      result.taxDeferredRatio = taxRatios.taxDeferredRatio;
+      result.investmentIncomeRatio = taxRatios.investmentIncomeRatio;
+    }
+
+    const storedAdjustments = this.loadContributionAdjustments();
+    if (storedAdjustments) {
+      result.contributionAdjustments = storedAdjustments;
+    }
+
     result.roundAll();
     this.calculateInputChange.emit(result);
+  }
+
+  private loadContributionAdjustments() {
+    const stored = window.localStorage.getItem('br4-contribution-adjustments');
+    if (!stored) {
+      return [];
+    }
+    try {
+      const parsed = JSON.parse(stored);
+      return parsed.map((adj) => ({
+        name: adj.name,
+        startDate:
+          typeof adj.startDate === 'string'
+            ? new Date(adj.startDate)
+            : adj.startDate,
+        monthlyAdjustment: adj.monthlyAdjustment,
+      }));
+    } catch (e) {
+      console.error('Failed to parse contribution adjustments', e);
+      return [];
+    }
+  }
+
+  saveContributionAdjustments(adjustments) {
+    const serialized = adjustments.map((adj) => ({
+      name: adj.name,
+      startDate:
+        adj.startDate instanceof Date
+          ? adj.startDate.toISOString().split('T')[0]
+          : adj.startDate,
+      monthlyAdjustment: adj.monthlyAdjustment,
+    }));
+    window.localStorage.setItem(
+      'br4-contribution-adjustments',
+      JSON.stringify(serialized)
+    );
+    this.recalculate();
+  }
+
+  addAdjustment() {
+    this.contributionAdjustments = [
+      ...this.contributionAdjustments,
+      {
+        name: '',
+        startDate: new Date(),
+        monthlyAdjustment: 0,
+      },
+    ];
+    this.saveContributionAdjustments(this.contributionAdjustments);
+  }
+
+  removeAdjustment(index: number) {
+    this.contributionAdjustments.splice(index, 1);
+    this.saveContributionAdjustments(this.contributionAdjustments);
+  }
+
+  updateAdjustmentDate(index: number, dateString: string) {
+    this.contributionAdjustments[index].startDate = new Date(dateString);
+    this.saveContributionAdjustments(this.contributionAdjustments);
+  }
+
+  getDateString(date: Date | string): string {
+    if (typeof date === 'string') {
+      return date;
+    }
+    if (date instanceof Date) {
+      return date.toISOString().split('T')[0];
+    }
+    return '';
+  }
+
+  setAdjustmentDate(index: number, dateString: string) {
+    this.contributionAdjustments[index].startDate = new Date(dateString);
+    this.saveContributionAdjustments(this.contributionAdjustments);
+  }
+
+  swapAdjustments(index1: number, index2: number) {
+    const temp = this.contributionAdjustments[index1];
+    this.contributionAdjustments[index1] = this.contributionAdjustments[index2];
+    this.contributionAdjustments[index2] = temp;
+    this.saveContributionAdjustments(this.contributionAdjustments);
+  }
+
+  onAdjustmentChange() {
+    this.saveContributionAdjustments(this.contributionAdjustments);
+  }
+
+  trackAdjustment(index: number, item: any) {
+    return index;
   }
 
   async selectBudget(budgetId: string) {
@@ -469,6 +573,58 @@ export class YnabComponent implements OnInit {
     this.netWorth = netWorth;
   }
 
+  private calculateTaxRatios() {
+    let taxFreeBalance = 0;
+    let taxDeferredBalance = 0;
+    let taxableBalance = 0;
+
+    this.accounts.controls.forEach((a) => {
+      const balance = Number.parseFloat(a.value.balance);
+      if (Number.isNaN(balance) || balance <= 0) {
+        return;
+      }
+
+      const taxTreatment = a.value.taxTreatment;
+      switch (taxTreatment) {
+        case 'tax-free':
+          taxFreeBalance += balance;
+          break;
+        case 'tax-deferred':
+          taxDeferredBalance += balance;
+          break;
+        case 'taxable':
+          taxableBalance += balance;
+          break;
+      }
+    });
+
+    const categoryGroups = this.budgetForm.value.categoryGroups || [];
+    categoryGroups.forEach((group) => {
+      group.categories.forEach((category) => {
+        if (category.taxFreeContribution) {
+          taxFreeBalance += category.taxFreeContribution;
+        }
+        if (category.taxDeferredContribution) {
+          taxDeferredBalance += category.taxDeferredContribution;
+        }
+        if (category.taxableContribution) {
+          taxableBalance += category.taxableContribution;
+        }
+      });
+    });
+
+    const totalBalance = taxFreeBalance + taxDeferredBalance + taxableBalance;
+    if (totalBalance === 0) {
+      return null;
+    }
+
+    return {
+      taxFreeRatio: taxFreeBalance / totalBalance,
+      taxDeferredRatio: taxDeferredBalance / totalBalance,
+      investmentIncomeRatio: taxableBalance / totalBalance,
+    };
+  }
+
   private mapAccounts(accounts: ynab.Account[]) {
     const mapped = accounts
       .filter((a) => !(a.closed || a.deleted))
@@ -486,6 +642,7 @@ export class YnabComponent implements OnInit {
             balance: this.getAccountBalance(account, ynabBalance, overrides),
             ynabBalance,
             monthlyContribution: overrides.monthlyContribution,
+            taxTreatment: overrides.taxTreatment,
           })
         );
       });

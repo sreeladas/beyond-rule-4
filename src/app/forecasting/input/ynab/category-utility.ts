@@ -121,6 +121,20 @@ export default class CategoryUtility {
     if (overrides.contributionBudget !== undefined) {
       contributionBudget = overrides.contributionBudget;
     }
+
+    const taxFreeContribution = overrides.taxFreeContribution || 0;
+    const taxDeferredContribution = overrides.taxDeferredContribution || 0;
+    const taxableContribution = overrides.taxableContribution || 0;
+
+    if (
+      taxFreeContribution > 0 ||
+      taxDeferredContribution > 0 ||
+      taxableContribution > 0
+    ) {
+      contributionBudget =
+        taxFreeContribution + taxDeferredContribution + taxableContribution;
+    }
+
     return Object.assign({
       name: category.name,
       ignore,
@@ -130,6 +144,9 @@ export default class CategoryUtility {
       computedFiBudget,
       computedLeanFiBudget,
       contributionBudget,
+      taxFreeContribution,
+      taxDeferredContribution,
+      taxableContribution,
       info: categoryBudgetInfo,
     });
   }

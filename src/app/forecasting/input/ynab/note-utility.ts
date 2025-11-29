@@ -1,8 +1,14 @@
+export type TaxTreatment = 'tax-free' | 'tax-deferred' | 'taxable';
+
 export interface Overrides {
   contributionBudget: number;
   computedLeanFiBudget: number;
   computedFiBudget: number;
   monthlyContribution: number;
+  taxTreatment: TaxTreatment;
+  taxFreeContribution: number;
+  taxDeferredContribution: number;
+  taxableContribution: number;
 }
 
 export default class NoteUtility {
@@ -14,7 +20,11 @@ export default class NoteUtility {
       contributionBudget: undefined,
       computedLeanFiBudget: undefined,
       computedFiBudget: undefined,
-      monthlyContribution: undefined, // used on accounts to implicitly add a contribution
+      monthlyContribution: undefined,
+      taxTreatment: undefined,
+      taxFreeContribution: undefined,
+      taxDeferredContribution: undefined,
+      taxableContribution: undefined,
     };
 
     if (!note) {
@@ -41,6 +51,45 @@ export default class NoteUtility {
           break;
         case '+m':
           override.monthlyContribution = c.value;
+          break;
+        case '+tax-free':
+        case '+taxfree':
+        case '+tfsa':
+        case '+roth':
+          override.taxFreeContribution =
+            (override.taxFreeContribution || 0) + c.value;
+          break;
+        case '+tax-deferred':
+        case '+taxdeferred':
+        case '+rrsp':
+        case '+401k':
+        case '+traditional':
+          override.taxDeferredContribution =
+            (override.taxDeferredContribution || 0) + c.value;
+          break;
+        case '+taxable':
+        case '+investment':
+        case '+brokerage':
+          override.taxableContribution =
+            (override.taxableContribution || 0) + c.value;
+          break;
+        case 'tax-free':
+        case 'taxfree':
+        case 'tfsa':
+        case 'roth':
+          override.taxTreatment = 'tax-free';
+          break;
+        case 'tax-deferred':
+        case 'taxdeferred':
+        case 'rrsp':
+        case '401k':
+        case 'traditional':
+          override.taxTreatment = 'tax-deferred';
+          break;
+        case 'taxable':
+        case 'investment':
+        case 'brokerage':
+          override.taxTreatment = 'taxable';
           break;
         default:
           break;

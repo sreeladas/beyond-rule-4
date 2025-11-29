@@ -542,6 +542,139 @@
         </div>
       </div>
     </div>
+    <div ngbAccordionItem id="pAdjustments" [collapsed]="false">
+      <h2 ngbAccordionHeader>
+        <button ngbAccordionButton>
+          <span class="float-start">Contribution Adjustments</span>
+          <span class="ms-auto">{{ contributionAdjustments.length }}</span>
+        </button>
+      </h2>
+      <div ngbAccordionCollapse>
+        <div ngbAccordionBody>
+          <ng-template>
+            <div class="row mb-3">
+              <div class="col">
+                <p class="small text-muted">
+                  Add life events that will adjust your monthly contributions
+                  (e.g., buying a house, paying off mortgage, retiring).
+                </p>
+              </div>
+            </div>
+            <div
+              *ngIf="contributionAdjustments && contributionAdjustments.length"
+            >
+              <ng-container
+                *ngFor="
+                  let adj of contributionAdjustments;
+                  let i = index;
+                  let last = last
+                "
+              >
+                <div class="card mb-3">
+                  <div class="card-body">
+                    <div class="row">
+                      <div class="col text-end">
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-outline-secondary"
+                          (click)="removeAdjustment(i)"
+                          title="Remove adjustment"
+                          style="
+                            border-radius: 50%;
+                            width: 28px;
+                            height: 28px;
+                            padding: 0;
+                            font-size: 18px;
+                            line-height: 1;
+                          "
+                        >
+                          ×
+                        </button>
+                      </div>
+                    </div>
+                    <div class="row mb-2">
+                      <div class="col">
+                        <label class="form-label small">Event Name</label>
+                        <input
+                          type="text"
+                          class="form-control form-control-sm"
+                          [(ngModel)]="adj.name"
+                          (blur)="onAdjustmentChange()"
+                          [ngModelOptions]="{ standalone: true }"
+                          placeholder="e.g., Buy House, Pay Off Mortgage"
+                        />
+                      </div>
+                    </div>
+                    <div class="row mb-2">
+                      <div class="col">
+                        <label class="form-label small">Start Date</label>
+                        <input
+                          type="date"
+                          class="form-control form-control-sm"
+                          [value]="getDateString(adj.startDate)"
+                          (input)="setAdjustmentDate(i, $event.target.value)"
+                        />
+                      </div>
+                    </div>
+                    <div class="row mb-2">
+                      <div class="col">
+                        <label class="form-label small"
+                          >Monthly Adjustment ({{ currencyIsoCode }})</label
+                        >
+                        <input
+                          type="number"
+                          class="form-control form-control-sm"
+                          [(ngModel)]="adj.monthlyAdjustment"
+                          (blur)="onAdjustmentChange()"
+                          [ngModelOptions]="{ standalone: true }"
+                          placeholder="Use negative for decreased contributions"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div *ngIf="!last" class="text-center mb-3">
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-secondary"
+                    (click)="swapAdjustments(i, i + 1)"
+                    title="Swap order"
+                    style="
+                      border-radius: 50%;
+                      width: 32px;
+                      height: 32px;
+                      padding: 0;
+                      transform: rotate(90deg);
+                    "
+                  >
+                    ⇄
+                  </button>
+                </div>
+              </ng-container>
+            </div>
+            <div class="row mt-3">
+              <div class="col text-center">
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary btn-sm"
+                  (click)="addAdjustment()"
+                  style="
+                    border-radius: 50%;
+                    width: 36px;
+                    height: 36px;
+                    padding: 0;
+                    font-size: 20px;
+                    line-height: 1;
+                  "
+                >
+                  +
+                </button>
+              </div>
+            </div>
+          </ng-template>
+        </div>
+      </div>
+    </div>
     <div ngbAccordionItem id="pExpenses">
       <h2 ngbAccordionHeader>
         <button ngbAccordionButton>

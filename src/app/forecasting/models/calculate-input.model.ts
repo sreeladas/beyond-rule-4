@@ -1,5 +1,6 @@
 import { Birthdate } from '../input/ynab/birthdate-utility';
 import { round } from '../utilities/number-utility';
+import { ContributionAdjustment } from './contribution-adjustment.model';
 
 export class CalculateInput {
   netWorth = 0;
@@ -15,8 +16,15 @@ export class CalculateInput {
   monthToName = '';
   birthdate: Birthdate = null;
   retirementAge = 60;
-  taxMinMultiplier: number = 1.3; // 30% tax rate adjustment
-  taxMaxMultiplier: number = 1.5; // 50% tax rate adjustment
+  contributionAdjustments: ContributionAdjustment[] = [];
+
+  taxFreeRatio = 0.4;
+  taxDeferredRatio = 0.4;
+  investmentIncomeRatio = 0.2;
+  taxDeferredRateMin = 0.3;
+  taxDeferredRateMax = 0.5;
+  investmentIncomeRateMin = 0.15;
+  investmentIncomeRateMax = 0.25;
 
   public constructor(init?: Partial<CalculateInput>) {
     Object.assign(
@@ -40,24 +48,48 @@ export class CalculateInput {
     this.leanFiPercentage = round(this.leanFiPercentage);
     this.leanAnnualExpenses = round(this.leanAnnualExpenses);
     this.retirementAge = Math.round(this.retirementAge);
-    this.taxMinMultiplier = round(this.taxMinMultiplier, 2);
-    this.taxMaxMultiplier = round(this.taxMaxMultiplier, 2);
+    this.taxFreeRatio = round(this.taxFreeRatio, 2);
+    this.taxDeferredRatio = round(this.taxDeferredRatio, 2);
+    this.investmentIncomeRatio = round(this.investmentIncomeRatio, 2);
+    this.taxDeferredRateMin = round(this.taxDeferredRateMin, 4);
+    this.taxDeferredRateMax = round(this.taxDeferredRateMax, 4);
+    this.investmentIncomeRateMin = round(this.investmentIncomeRateMin, 4);
+    this.investmentIncomeRateMax = round(this.investmentIncomeRateMax, 4);
   }
 
   get safeWithdrawalTimes() {
     return 1 / this.annualSafeWithdrawalRate;
   }
 
+  get taxMinMultiplier(): number {
+    const blendedTaxRate =
+      this.taxFreeRatio * 0 +
+      this.taxDeferredRatio * this.taxDeferredRateMin +
+      this.investmentIncomeRatio * this.investmentIncomeRateMin;
+    return 1 / (1 - blendedTaxRate);
+  }
+
+  get taxMaxMultiplier(): number {
+    const blendedTaxRate =
+      this.taxFreeRatio * 0 +
+      this.taxDeferredRatio * this.taxDeferredRateMax +
+      this.investmentIncomeRatio * this.investmentIncomeRateMax;
+    return 1 / (1 - blendedTaxRate);
+  }
+
   get fiNumber() {
-    // adjusted for a 45% estimated avg tax rate
-    return this.safeWithdrawalTimes * this.annualExpenses * 1.45;
+    const avgTaxMultiplier =
+      (this.taxMinMultiplier + this.taxMaxMultiplier) / 2;
+    return this.safeWithdrawalTimes * this.annualExpenses * avgTaxMultiplier;
   }
 
   get leanFiNumber() {
     let leanFiNumber = this.fiNumber * this.leanFiPercentage;
     if (this.leanAnnualExpenses) {
-      // adjusted for a 45% estimated avg tax rate
-      leanFiNumber = this.safeWithdrawalTimes * this.leanAnnualExpenses * 1.45;
+      const avgTaxMultiplier =
+        (this.taxMinMultiplier + this.taxMaxMultiplier) / 2;
+      leanFiNumber =
+        this.safeWithdrawalTimes * this.leanAnnualExpenses * avgTaxMultiplier;
     }
     return leanFiNumber;
   }

@@ -1,6 +1,7 @@
 import { CalculateInput } from './calculate-input.model';
 import { round } from '../utilities/number-utility';
 import { Birthdate } from '../input/ynab/birthdate-utility';
+import { ContributionAdjustmentUtility } from './contribution-adjustment.model';
 
 export class Forecast {
   monthlyForecasts: MonthlyForecast[];
@@ -93,13 +94,21 @@ export class Forecast {
       }),
     ];
     while (currentNetWorth < stopForecastingAmount && month < 1000) {
-      const contribution = calculateInput.monthlyContribution;
+      month++;
+      const forecastDate = new Date(this.month0Date);
+      forecastDate.setMonth(this.month0Date.getMonth() + month);
+
+      const adjustment = ContributionAdjustmentUtility.getAdjustmentForMonth(
+        calculateInput.contributionAdjustments,
+        forecastDate
+      );
+      const contribution = calculateInput.monthlyContribution + adjustment;
+
       const newNetWorth = round(
         ((currentNetWorth + contribution) * 100 * monthlyAverageGrowth) / 100
       );
       const interestGain = round(newNetWorth - currentNetWorth - contribution);
       const timesAnnualExpenses = round(newNetWorth / annualExpenses);
-      month++;
       totalContributions += contribution;
       const totalReturns = round(newNetWorth - totalContributions);
 
