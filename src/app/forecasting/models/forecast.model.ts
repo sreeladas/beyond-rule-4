@@ -63,7 +63,7 @@ export class Forecast {
   }
 
   private computeForecast(calculateInput: CalculateInput) {
-    const stopForecastingAmount = calculateInput.fiNumber * 1.6; // default to a bit more than Fat FI.
+    const stopForecastingAmount = calculateInput.fiNumber * 2; // default to a bit more than Fat FI.
 
     const annualExpenses = calculateInput.annualExpenses;
     const monthlyAverageGrowth =
@@ -93,7 +93,7 @@ export class Forecast {
         fireAchieved: startingNetWorth >= calculateInput.fiNumber,
       }),
     ];
-    while (currentNetWorth < stopForecastingAmount && month < 1000) {
+    while (currentNetWorth < stopForecastingAmount && month < 720) {
       month++;
       const forecastDate = new Date(this.month0Date);
       forecastDate.setMonth(this.month0Date.getMonth() + month);
