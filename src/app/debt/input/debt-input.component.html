@@ -1,0 +1,312 @@
+<div class="card">
+  <div class="card-body">
+    <div ngbAccordion [closeOthers]="false">
+      <!-- Debt Selection -->
+      <div ngbAccordionItem>
+        <h2 ngbAccordionHeader>
+          <button ngbAccordionButton>
+            <span class="float-start">Debt Details</span>
+            <span class="ms-auto"></span>
+          </button>
+        </h2>
+        <div ngbAccordionCollapse>
+          <div ngbAccordionBody>
+            <ng-template>
+              <div
+                *ngIf="isUsingSampleData"
+                class="alert alert-info small mb-3"
+              >
+                Using sample data. Authorize with YNAB to see your accounts.
+              </div>
+
+              <!-- Budget Selection -->
+              <div class="mb-3">
+                <label class="form-label small">Budget</label>
+                <select
+                  class="form-select form-select-sm"
+                  [ngModel]="selectedBudgetId"
+                  (ngModelChange)="onBudgetChange($event)"
+                >
+                  <option *ngFor="let budget of budgets" [value]="budget.id">
+                    {{ budget.name }}
+                  </option>
+                </select>
+              </div>
+
+              <!-- Account Selection -->
+              <div class="mb-3">
+                <label class="form-label small">Debt Account</label>
+                <select
+                  class="form-select form-select-sm"
+                  [(ngModel)]="selectedAccountId"
+                  (change)="onAccountChange()"
+                >
+                  <option
+                    *ngFor="let account of debtAccounts"
+                    [value]="account.id"
+                  >
+                    {{ account.name }} ({{ account.balance | currency }})
+                  </option>
+                </select>
+                <small *ngIf="debtAccounts.length === 0" class="text-muted">
+                  No accounts found with "Mortgage" or "Loan" in the name with a
+                  negative balance.
+                </small>
+              </div>
+
+              <!-- End Date -->
+              <div class="mb-3">
+                <label class="form-label small">Original End Date</label>
+                <input
+                  type="date"
+                  class="form-control form-control-sm"
+                  [(ngModel)]="endDate"
+                  (change)="onEndDateChange()"
+                />
+                <small class="text-muted"
+                  >When was/is the debt scheduled to be paid off?</small
+                >
+              </div>
+
+              <!-- Current Monthly Payment -->
+              <div class="mb-3">
+                <label class="form-label small">Current Monthly Payment</label>
+                <input
+                  type="number"
+                  class="form-control form-control-sm"
+                  [(ngModel)]="currentMonthlyPayment"
+                  (blur)="onMonthlyPaymentChange()"
+                  min="0"
+                  step="0.01"
+                />
+                <small class="text-muted"
+                  >Your actual monthly payment amount (excluding
+                  pre-payments)</small
+                >
+              </div>
+
+              <!-- Rate Comparison -->
+              <div class="row mb-3">
+                <div class="col-6">
+                  <label class="form-label small">Current Rate (%)</label>
+                  <input
+                    type="number"
+                    class="form-control form-control-sm"
+                    [(ngModel)]="currentRate"
+                    (blur)="onRateChange()"
+                    step="0.01"
+                    min="0"
+                    max="100"
+                  />
+                </div>
+              </div>
+            </ng-template>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pre-Payments & Rate Changes -->
+      <div ngbAccordionItem>
+        <h2 ngbAccordionHeader>
+          <button ngbAccordionButton>
+            <span class="float-start">Pre-Payments & Rate Changes</span>
+            <span class="ms-auto">{{ adjustments.length }}</span>
+          </button>
+        </h2>
+        <div ngbAccordionCollapse>
+          <div ngbAccordionBody>
+            <ng-template>
+              <div class="row mb-3">
+                <div class="col">
+                  <p class="small text-muted">
+                    Add extra payments to see how they affect your payoff date
+                    and interest savings.
+                  </p>
+                </div>
+              </div>
+
+              <div *ngIf="adjustments && adjustments.length">
+                <ng-container
+                  *ngFor="
+                    let adj of adjustments;
+                    let i = index;
+                    let last = last
+                  "
+                >
+                  <div class="card mb-3">
+                    <div class="card-body">
+                      <div class="row">
+                        <div class="col text-end">
+                          <button
+                            type="button"
+                            class="btn btn-sm btn-outline-secondary"
+                            (click)="removeAdjustment(i)"
+                            title="Remove adjustment"
+                            style="
+                              border-radius: 50%;
+                              width: 28px;
+                              height: 28px;
+                              padding: 0;
+                              font-size: 18px;
+                              line-height: 1;
+                            "
+                          >
+                            ×
+                          </button>
+                        </div>
+                      </div>
+                      <div class="row mb-2">
+                        <div class="col">
+                          <label class="form-label small">Name</label>
+                          <div class="input-group">
+                            <select
+                              class="form-select form-select-sm"
+                              [ngModel]="adj.type"
+                              (ngModelChange)="
+                                onAdjustmentTypeChange(i, $event)
+                              "
+                            >
+                              <option value="pre-payment">Pre-Payment</option>
+                              <option value="rate-change">Rate Change</option>
+                            </select>
+                            <input
+                              type="text"
+                              class="form-control form-control-sm"
+                              [(ngModel)]="adj.name"
+                              (blur)="onAdjustmentChange()"
+                              placeholder="e.g., Tax Refund, Bonus or Rate Change"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div *ngIf="adj.type === 'pre-payment'" class="row mb-2">
+                        <div class="col-6">
+                          <label class="form-label small">Amount</label>
+                          <input
+                            type="number"
+                            class="form-control form-control-sm"
+                            [(ngModel)]="adj.amount"
+                            (blur)="onAdjustmentChange()"
+                            min="0"
+                          />
+                        </div>
+                        <div class="col-6">
+                          <label class="form-label small">Frequency</label>
+                          <select
+                            class="form-select form-select-sm"
+                            [(ngModel)]="adj.frequency"
+                            (change)="onAdjustmentChange()"
+                          >
+                            <option value="one-time">One-time</option>
+                            <option value="recurring">
+                              With Regular Payment
+                            </option>
+                          </select>
+                        </div>
+                      </div>
+                      <div *ngIf="adj.type === 'pre-payment'" class="row mb-2">
+                        <div class="col-6">
+                          <label class="form-label small">
+                            {{
+                              adj.frequency === 'one-time'
+                                ? 'Payment Date'
+                                : 'Start Date'
+                            }}
+                          </label>
+                          <input
+                            type="date"
+                            class="form-control form-control-sm"
+                            [value]="getDateString(adj.startDate)"
+                            (input)="
+                              setPrePaymentStartDate(i, $event.target.value)
+                            "
+                          />
+                        </div>
+                        <div
+                          class="col-6"
+                          *ngIf="adj.frequency === 'recurring'"
+                        >
+                          <label class="form-label small"
+                            >End Date (optional)</label
+                          >
+                          <input
+                            type="date"
+                            class="form-control form-control-sm"
+                            [value]="getDateString(adj.endDate)"
+                            (input)="
+                              setPrePaymentEndDate(i, $event.target.value)
+                            "
+                          />
+                        </div>
+                      </div>
+                      <div *ngIf="adj.type === 'rate-change'" class="row mb-2">
+                        <div class="col-6">
+                          <label class="form-label small">New Rate (%)</label>
+                          <input
+                            type="number"
+                            class="form-control form-control-sm"
+                            [(ngModel)]="adj.rate"
+                            (blur)="onAdjustmentChange()"
+                            step="0.01"
+                            min="0"
+                            max="100"
+                          />
+                        </div>
+                        <div class="col-6">
+                          <label class="form-label small">Effective Date</label>
+                          <input
+                            type="date"
+                            class="form-control form-control-sm"
+                            [value]="getDateString(adj.effectiveDate)"
+                            (input)="setRateChangeDate(i, $event.target.value)"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div *ngIf="!last" class="text-center mb-3">
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-secondary"
+                      (click)="swapAdjustments(i, i + 1)"
+                      title="Swap order"
+                      style="
+                        border-radius: 50%;
+                        width: 32px;
+                        height: 32px;
+                        padding: 0;
+                        transform: rotate(90deg);
+                      "
+                    >
+                      ⇄
+                    </button>
+                  </div>
+                </ng-container>
+              </div>
+
+              <div class="row mt-3">
+                <div class="col text-center">
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary btn-sm"
+                    (click)="addAdjustment()"
+                    style="
+                      border-radius: 50%;
+                      width: 36px;
+                      height: 36px;
+                      padding: 0;
+                      font-size: 20px;
+                      line-height: 1;
+                    "
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            </ng-template>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

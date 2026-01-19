@@ -1,31 +1,34 @@
-<h3 class="fw-bolder">Expense Impact on FI Date</h3>
-<p>Each component of your spending adds time to your FI Date. Eliminate spending in a category below and move that
-    spending to savings contributions, and you can reduce your FI Date by the amount under <strong>Impact on FI
-        Date</strong>.
+<p>
+  Each component of your spending adds time to your FI Date. Eliminate spending
+  in a category below and move that spending to savings contributions, and you
+  can reduce your FI Date by the amount under
+  <strong>Impact on FI Date</strong>.
 </p>
 <div class="table-responsive">
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Category</th>
-                <th>FI Budget</th>
-                <th>Impact on FI Date</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr *ngFor="let c of spendingCategoriesWithImpact">
-                <td>{{ c.category.name }}</td>
-                <td>{{ c.category.fiBudget | currency:calculateInput.currencyIsoCode }}</td>
-                <td>
-                    <span [ngClass]="{'d-none': c.isFi === true}">
-                        <fa-icon [icon]="['fas', 'plus-circle']"></fa-icon>
-                    </span>
-                    <span [ngClass]="{'d-none': c.isFi !== true}">
-                        <fa-icon [icon]="['fas', 'check-circle']"></fa-icon>
-                    </span>
-                    {{ c.impactDate }}
-                </td>
-            </tr>
-        </tbody>
-    </table>
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Category</th>
+        <th>FI Budget</th>
+        <th>Impact on FI Date</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let c of spendingCategoriesWithImpact">
+        <td>{{ c.category.name }}</td>
+        <td>
+          {{ c.category.fiBudget | currency: calculateInput.currencyIsoCode }}
+        </td>
+        <td>
+          <span [ngClass]="{ 'd-none': c.isFi === true }">
+            <fa-icon [icon]="['fas', 'plus-circle']"></fa-icon>
+          </span>
+          <span [ngClass]="{ 'd-none': c.isFi !== true }">
+            <fa-icon [icon]="['fas', 'check-circle']"></fa-icon>
+          </span>
+          {{ c.impactDate }}
+        </td>
+      </tr>
+    </tbody>
+  </table>
 </div>

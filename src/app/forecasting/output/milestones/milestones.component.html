@@ -1,16 +1,29 @@
-<h3 class="fw-bolder">
-  Milestones of Financial Independence
-</h3>
-<div class="text-secondary"><a href="https://choosefi.com/podcast-episode/032-milestones-fi" target="_blank">The Milestones Of FI | Joel FI180 <fa-icon [icon]="['fas', 'external-link-square-alt']" size="sm"></fa-icon></a></div>
+<div class="text-secondary">
+  <a
+    href="https://choosefi.com/podcast-episode/032-milestones-fi"
+    target="_blank"
+    >The Milestones Of FI | Joel FI180
+    <fa-icon [icon]="['fas', 'external-link-square-alt']" size="sm"></fa-icon
+  ></a>
+</div>
 
 <div class="row">
-  <app-milestones-chart class="milestones-chart col-sm" [forecast]="forecast" [milestones]="milestones"
-    [currencyIsoCode]="calculateInput?.currencyIsoCode" [calculateInput]="calculateInput">
+  <app-milestones-chart
+    class="milestones-chart col-sm"
+    [forecast]="forecast"
+    [milestones]="milestones"
+    [currencyIsoCode]="calculateInput?.currencyIsoCode"
+    [calculateInput]="calculateInput"
+  >
   </app-milestones-chart>
 </div>
 
 <div class="row">
-  <app-milestones-text class="milestones-text col-sm" [forecast]="forecast" [milestones]="milestones"
-    [currencyIsoCode]="calculateInput?.currencyIsoCode">
+  <app-milestones-text
+    class="milestones-text col-sm"
+    [forecast]="forecast"
+    [milestones]="milestones"
+    [currencyIsoCode]="calculateInput?.currencyIsoCode"
+  >
   </app-milestones-text>
 </div>

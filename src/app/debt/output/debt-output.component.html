@@ -1,0 +1,240 @@
+<div *ngIf="debtInput && baselineResult; else noData">
+  <!-- Debt Summary -->
+  <div class="mb-4">
+    <button
+      class="btn btn-link w-100 text-start p-0"
+      type="button"
+      (click)="isSummaryCollapsed = !isSummaryCollapsed"
+      [attr.aria-expanded]="!isSummaryCollapsed"
+      aria-controls="summary-content"
+    >
+      <h3 class="fw-bolder mb-0">
+        Debt Summary
+        <i
+          class="fas"
+          [class.fa-chevron-down]="isSummaryCollapsed"
+          [class.fa-chevron-up]="!isSummaryCollapsed"
+          [class.float-end]="true"
+        ></i>
+      </h3>
+    </button>
+    <div id="summary-content" [ngbCollapse]="isSummaryCollapsed">
+      <div class="mt-4">
+        <div class="mb-3">
+          <div class="text-muted small">Current Balance</div>
+          <div class="h4 mb-0">{{ debtInput.currentBalance | currency }}</div>
+        </div>
+
+        <!-- Balance Chart -->
+        <div #chartContainer class="mb-4" *ngIf="chartData.length > 0">
+          <ngx-charts-line-chart
+            [view]="view"
+            [scheme]="colorScheme"
+            [results]="chartData"
+            [xAxis]="true"
+            [yAxis]="true"
+            [showXAxisLabel]="true"
+            [showYAxisLabel]="true"
+            [xAxisLabel]="'Date'"
+            [yAxisLabel]="'Balance'"
+            [autoScale]="true"
+            [xAxisTickFormatting]="xAxisTickFormatting"
+            [yAxisTickFormatting]="yAxisTickFormatting"
+            [legend]="true"
+            [legendPosition]="'below'"
+          >
+            <ng-template #tooltipTemplate let-model="model">
+              <span class="tooltip-label">{{ tooltipDateFormat(model.name) }}</span>
+              <span class="tooltip-val">{{ model.value | currency }}</span>
+            </ng-template>
+            <ng-template #seriesTooltipTemplate let-model="model">
+              <div class="area-tooltip-container">
+                <div>{{ tooltipDateFormat(model[0].name) }}</div>
+                <div *ngFor="let item of model" class="tooltip-item">
+                  <span class="tooltip-item-color" [style.background-color]="item.color"></span>
+                  {{ item.series }}: {{ item.value | currency }}
+                </div>
+              </div>
+            </ng-template>
+          </ngx-charts-line-chart>
+        </div>
+
+        <!-- Comparison Table -->
+        <div class="table-responsive">
+          <table class="table table-sm">
+            <thead class="table-dark">
+              <tr>
+                <th></th>
+                <th>Baseline</th>
+                <th *ngIf="adjustments.length > 0">With Adjustments</th>
+                <th *ngIf="adjustments.length > 0">Savings</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th>Total Interest</th>
+                <td>{{ baselineResult.totalInterest | currency }}</td>
+                <td *ngIf="adjustments.length > 0">
+                  {{ adjustedResult.totalInterest | currency }}
+                </td>
+                <td *ngIf="adjustments.length > 0">
+                  {{ interestSaved | currency }}
+                </td>
+              </tr>
+              <tr>
+                <th>Payoff Date</th>
+                <td>{{ formatDate(baselineResult.payoffDate) }}</td>
+                <td *ngIf="adjustments.length > 0">
+                  {{ formatDate(adjustedResult.payoffDate) }}
+                </td>
+                <td *ngIf="adjustments.length > 0">{{ monthsSaved }} months</td>
+              </tr>
+              <tr>
+                <th>Total Payments</th>
+                <td>{{ baselineResult.totalPayments | currency }}</td>
+                <td *ngIf="adjustments.length > 0">
+                  {{ adjustedResult.totalPayments | currency }}
+                </td>
+                <td *ngIf="adjustments.length > 0">
+                  {{
+                    baselineResult.totalPayments - adjustedResult.totalPayments
+                      | currency
+                  }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Yearly Breakdown -->
+  <div class="mb-4">
+    <button
+      class="btn btn-link w-100 text-start p-0"
+      type="button"
+      (click)="isYearlyCollapsed = !isYearlyCollapsed"
+      [attr.aria-expanded]="!isYearlyCollapsed"
+      aria-controls="yearly-content"
+    >
+      <h3 class="fw-bolder mb-0">
+        Yearly Breakdown
+        <i
+          class="fas"
+          [class.fa-chevron-down]="isYearlyCollapsed"
+          [class.fa-chevron-up]="!isYearlyCollapsed"
+          [class.float-end]="true"
+        ></i>
+      </h3>
+    </button>
+    <div id="yearly-content" [ngbCollapse]="isYearlyCollapsed">
+      <div class="mt-4">
+        <div class="table-responsive">
+          <table class="table table-sm table-striped">
+            <thead class="table-dark">
+              <tr>
+                <th>Year</th>
+                <th>Principal</th>
+                <th>Interest</th>
+                <th *ngIf="adjustments.length > 0">Extra</th>
+                <th>End Balance</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                *ngFor="
+                  let year of adjustments.length > 0
+                    ? adjustedResult.yearlySummary
+                    : baselineResult.yearlySummary
+                "
+              >
+                <td>{{ year.year }}</td>
+                <td>{{ year.totalPrincipal | currency }}</td>
+                <td>{{ year.totalInterest | currency }}</td>
+                <td *ngIf="adjustments.length > 0">
+                  {{ year.totalExtra | currency }}
+                </td>
+                <td>{{ year.endingBalance | currency }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payment Schedule -->
+  <div class="mb-4">
+    <button
+      class="btn btn-link w-100 text-start p-0"
+      type="button"
+      (click)="isScheduleCollapsed = !isScheduleCollapsed"
+      [attr.aria-expanded]="!isScheduleCollapsed"
+      aria-controls="schedule-content"
+    >
+      <h3 class="fw-bolder mb-0">
+        Payment Schedule
+        <i
+          class="fas"
+          [class.fa-chevron-down]="isScheduleCollapsed"
+          [class.fa-chevron-up]="!isScheduleCollapsed"
+          [class.float-end]="true"
+        ></i>
+      </h3>
+    </button>
+    <div id="schedule-content" [ngbCollapse]="isScheduleCollapsed">
+      <div class="mt-4">
+        <p class="text-muted small">
+          Detailed payment-by-payment breakdown showing principal, interest, and
+          balance for each payment.
+        </p>
+        <div
+          class="table-responsive"
+          style="max-height: 400px; overflow-y: auto"
+        >
+          <table class="table table-sm table-striped">
+            <thead class="table-dark sticky-top">
+              <tr>
+                <th>#</th>
+                <th>Date</th>
+                <th>Min Payment</th>
+                <th>Scheduled</th>
+                <th>Principal</th>
+                <th>Interest</th>
+                <th *ngIf="adjustments.length > 0">One-Time</th>
+                <th>Balance</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                *ngFor="
+                  let row of adjustments.length > 0
+                    ? adjustedResult.schedule
+                    : baselineResult.schedule
+                "
+              >
+                <td>{{ row.paymentNumber }}</td>
+                <td>{{ formatDate(row.date) }}</td>
+                <td>{{ row.minimumPayment | currency }}</td>
+                <td>{{ row.scheduledPayment | currency }}</td>
+                <td>{{ row.principal | currency }}</td>
+                <td>{{ row.interest | currency }}</td>
+                <td *ngIf="adjustments.length > 0">
+                  {{ row.oneTimeExtra | currency }}
+                </td>
+                <td>{{ row.balance | currency }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<ng-template #noData>
+  <div class="text-muted">
+    <p>Select a debt account and enter the end date to see calculations.</p>
+  </div>
+</ng-template>

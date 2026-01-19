@@ -1,39 +1,99 @@
 <div class="row" *ngIf="calculateInput; else loading">
   <div class="col">
-    <!-- FIRE Dashboard -->
-    <div class="row">
-      <app-fire-dashboard
-        class="col"
-        [calculateInput]="calculateInput"
-        [forecast]="forecast"
+    <!-- Coast FIRE Investment Projection -->
+    <div class="mb-4">
+      <button
+        class="btn btn-link w-100 text-start p-0"
+        type="button"
+        (click)="isCoastFireCollapsed = !isCoastFireCollapsed"
+        [attr.aria-expanded]="!isCoastFireCollapsed"
+        aria-controls="coast-fire-content"
       >
-      </app-fire-dashboard>
+        <h3 class="fw-bolder mb-0">
+          Coast FIRE Investment Projection
+          <i
+            class="fas"
+            [class.fa-chevron-down]="isCoastFireCollapsed"
+            [class.fa-chevron-up]="!isCoastFireCollapsed"
+            [class.float-end]="true"
+          ></i>
+        </h3>
+      </button>
+      <div id="coast-fire-content" [ngbCollapse]="isCoastFireCollapsed">
+        <div class="mt-4">
+          <app-fire-dashboard
+            [calculateInput]="calculateInput"
+            [forecast]="forecast"
+          >
+          </app-fire-dashboard>
+          <app-fi-text
+            class="d-block mt-4"
+            [calculateInput]="calculateInput"
+            [forecast]="forecast"
+          >
+          </app-fi-text>
+        </div>
+      </div>
     </div>
 
-    <!-- Existing Components -->
-    <div class="row mt-4">
-      <app-fi-text
-        class="col"
-        [calculateInput]="calculateInput"
-        [forecast]="forecast"
+    <!-- Milestones of FI -->
+    <div class="mb-4">
+      <button
+        class="btn btn-link w-100 text-start p-0"
+        type="button"
+        (click)="isMilestonesCollapsed = !isMilestonesCollapsed"
+        [attr.aria-expanded]="!isMilestonesCollapsed"
+        aria-controls="milestones-content"
       >
-      </app-fi-text>
+        <h3 class="fw-bolder mb-0">
+          Milestones of Financial Independence
+          <i
+            class="fas"
+            [class.fa-chevron-down]="isMilestonesCollapsed"
+            [class.fa-chevron-up]="!isMilestonesCollapsed"
+            [class.float-end]="true"
+          ></i>
+        </h3>
+      </button>
+      <div id="milestones-content" [ngbCollapse]="isMilestonesCollapsed">
+        <div class="mt-2">
+          <app-milestones
+            [calculateInput]="calculateInput"
+            [forecast]="forecast"
+          >
+          </app-milestones>
+        </div>
+      </div>
     </div>
-    <div class="row">
-      <app-milestones
-        class="col"
-        [calculateInput]="calculateInput"
-        [forecast]="forecast"
+
+    <!-- Expense Impact on FI Date -->
+    <div class="mb-4">
+      <button
+        class="btn btn-link w-100 text-start p-0"
+        type="button"
+        (click)="isExpenseImpactCollapsed = !isExpenseImpactCollapsed"
+        [attr.aria-expanded]="!isExpenseImpactCollapsed"
+        aria-controls="expense-impact-content"
       >
-      </app-milestones>
-    </div>
-    <div class="row mt-4">
-      <app-expense-impact
-        class="col"
-        [calculateInput]="calculateInput"
-        [forecast]="forecast"
-      >
-      </app-expense-impact>
+        <h3 class="fw-bolder mb-0">
+          Expense Impact on FI Date
+          <i
+            class="fas"
+            [class.fa-chevron-down]="isExpenseImpactCollapsed"
+            [class.fa-chevron-up]="!isExpenseImpactCollapsed"
+            [class.float-end]="true"
+          ></i>
+        </h3>
+      </button>
+      <div id="expense-impact-content" [ngbCollapse]="isExpenseImpactCollapsed">
+        <div class="mt-2">
+          <app-expense-impact
+            [calculateInput]="calculateInput"
+            [forecast]="forecast"
+          >
+          </app-expense-impact>
+        </div>
+      </div>
     </div>
   </div>
 </div>

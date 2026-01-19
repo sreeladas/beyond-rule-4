@@ -286,10 +286,12 @@
                     />
                     <div class="input-group-append">
                       <button
-                        class="btn btn-outline-secondary bi bi-calendar3"
+                        class="btn btn-outline-secondary"
                         (click)="d.toggle()"
                         type="button"
-                      ></button>
+                      >
+                        <i class="fas fa-calendar-alt"></i>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -331,7 +333,7 @@
         <button ngbAccordionButton>
           <span class="float-start">Starting Portfolio</span>
           <span class="ms-auto">
-            {{ netWorth | currency : currencyIsoCode }}
+            {{ netWorth | currency: currencyIsoCode }}
           </span>
         </button>
       </h2>
@@ -343,8 +345,8 @@
                 <thead class="thead-sum">
                   <tr>
                     <th>Starting Balance</th>
-                    <td>{{ ynabNetWorth | currency : currencyIsoCode }}</td>
-                    <td>{{ netWorth | currency : currencyIsoCode }}</td>
+                    <td>{{ ynabNetWorth | currency: currencyIsoCode }}</td>
+                    <td>{{ netWorth | currency: currencyIsoCode }}</td>
                   </tr>
                   <tr>
                     <td colspan="3">
@@ -370,7 +372,7 @@
                     <td>{{ account.value.name }}</td>
                     <td>
                       {{
-                        account.value.ynabBalance | currency : currencyIsoCode
+                        account.value.ynabBalance | currency: currencyIsoCode
                       }}
                     </td>
                     <td>
@@ -410,7 +412,7 @@
         <button ngbAccordionButton>
           <span class="float-start">Contributions</span>
           <span class="ms-auto">{{
-            budgetForm.value.monthlyContribution | currency : currencyIsoCode
+            budgetForm.value.monthlyContribution | currency: currencyIsoCode
           }}</span>
         </button>
       </h2>
@@ -457,15 +459,15 @@
                       <td>
                         <span
                           ngbPopover="Min:  {{
-                            category.info.min.value | currency : currencyIsoCode
+                            category.info.min.value | currency: currencyIsoCode
                           }} Max:  {{
-                            category.info.max.value | currency : currencyIsoCode
+                            category.info.max.value | currency: currencyIsoCode
                           }} Mean: {{
-                            category.info.mean | currency : currencyIsoCode
+                            category.info.mean | currency: currencyIsoCode
                           }} "
                           triggers="mouseenter:mouseleave"
                         >
-                          {{ category.value | currency : currencyIsoCode }}
+                          {{ category.value | currency: currencyIsoCode }}
                         </span>
                       </td>
                     </tr>
@@ -542,7 +544,7 @@
         </div>
       </div>
     </div>
-    <div ngbAccordionItem id="pAdjustments" [collapsed]="false">
+    <div ngbAccordionItem id="pAdjustments">
       <h2 ngbAccordionHeader>
         <button ngbAccordionButton>
           <span class="float-start">Contribution Adjustments</span>
@@ -680,7 +682,7 @@
         <button ngbAccordionButton>
           <span class="float-start">Expenses</span>
           <span class="ms-auto">
-            {{ expenses.fi.annual | currency : currencyIsoCode }}</span
+            {{ expenses.fi.annual | currency: currencyIsoCode }}</span
           >
         </button>
       </h2>
@@ -717,25 +719,25 @@
                   <tr>
                     <th>Monthly Expenses</th>
                     <td>
-                      {{ expenses.ynab.monthly | currency : currencyIsoCode }}
+                      {{ expenses.ynab.monthly | currency: currencyIsoCode }}
                     </td>
                     <td>
-                      {{ expenses.fi.monthly | currency : currencyIsoCode }}
+                      {{ expenses.fi.monthly | currency: currencyIsoCode }}
                     </td>
                     <td>
-                      {{ expenses.leanFi.monthly | currency : currencyIsoCode }}
+                      {{ expenses.leanFi.monthly | currency: currencyIsoCode }}
                     </td>
                   </tr>
                   <tr>
                     <th>Estimated Annual Expenses</th>
                     <td>
-                      {{ expenses.ynab.annual | currency : currencyIsoCode }}
+                      {{ expenses.ynab.annual | currency: currencyIsoCode }}
                     </td>
                     <td>
-                      {{ expenses.fi.annual | currency : currencyIsoCode }}
+                      {{ expenses.fi.annual | currency: currencyIsoCode }}
                     </td>
                     <td>
-                      {{ expenses.leanFi.annual | currency : currencyIsoCode }}
+                      {{ expenses.leanFi.annual | currency: currencyIsoCode }}
                     </td>
                   </tr>
                 </tbody>
@@ -777,19 +779,19 @@
                             <span
                               ngbPopover="Min:  {{
                                 category.value.info.min.value
-                                  | currency : currencyIsoCode
+                                  | currency: currencyIsoCode
                               }} Max:  {{
                                 category.value.info.max.value
-                                  | currency : currencyIsoCode
+                                  | currency: currencyIsoCode
                               }} Mean: {{
                                 category.value.info.mean
-                                  | currency : currencyIsoCode
+                                  | currency: currencyIsoCode
                               }} "
                               triggers="mouseenter:mouseleave"
                             >
                               {{
                                 category.value.retrievedBudgeted
-                                  | currency : currencyIsoCode
+                                  | currency: currencyIsoCode
                               }}
                             </span>
                           </td>

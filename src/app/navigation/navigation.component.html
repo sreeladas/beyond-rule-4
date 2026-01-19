@@ -29,7 +29,18 @@
   >
     <ul class="navbar-nav me-auto">
       <li class="nav-item">
-        <a class="nav-link" href="#privacy-policy" (click)="onPrivacyPolicyClick()">Privacy Policy</a>
+        <a class="nav-link" routerLink="/">FI Forecasting</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" routerLink="/debt">Debt Forecasting</a>
+      </li>
+      <li class="nav-item">
+        <a
+          class="nav-link"
+          href="#privacy-policy"
+          (click)="onPrivacyPolicyClick()"
+          >Privacy Policy</a
+        >
       </li>
     </ul>
     <form class="form-inline ms-auto my-2 my-lg-0">

@@ -1,19 +1,28 @@
-import { Component, OnInit, Input, OnChanges, SimpleChanges } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  Input,
+  OnChanges,
+  SimpleChanges,
+} from '@angular/core';
 
 import { CalculateInput } from '../models/calculate-input.model';
 import { Forecast } from '../models/forecast.model';
 
 @Component({
-    selector: 'app-forecasting-output',
-    templateUrl: 'output.component.html',
-    standalone: false
+  selector: 'app-forecasting-output',
+  templateUrl: 'output.component.html',
+  standalone: false,
 })
-
 export class ForecastingOutputComponent implements OnInit, OnChanges {
   @Input() calculateInput: CalculateInput;
   forecast: Forecast;
 
-  constructor() { }
+  isCoastFireCollapsed = false;
+  isMilestonesCollapsed = false;
+  isExpenseImpactCollapsed = false;
+
+  constructor() {}
 
   ngOnInit() {
     this.forecast = new Forecast(this.calculateInput);
