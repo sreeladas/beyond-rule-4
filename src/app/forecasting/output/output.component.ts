@@ -5,7 +5,7 @@ import {
   OnChanges,
   SimpleChanges,
 } from '@angular/core';
-
+import { buildOnboardingTour } from '../../onboarding/onboarding.tour';
 import { CalculateInput } from '../models/calculate-input.model';
 import { Forecast } from '../models/forecast.model';
 
@@ -33,4 +33,22 @@ export class ForecastingOutputComponent implements OnInit, OnChanges {
       this.forecast = new Forecast(this.calculateInput);
     }
   }
+ngAfterViewInit() {
+  if (!localStorage.getItem('onboardingComplete')) {
+    const tour = buildOnboardingTour();
+tour.on('complete', () =>
+  localStorage.setItem('onboardingComplete', 'true')
+);
+
+tour.on('cancel', () =>
+  localStorage.setItem('onboardingComplete', 'true')
+);
+
+tour.start();
+  }
+}
+
+startOnboarding() {
+  buildOnboardingTour().start();
+}
 }

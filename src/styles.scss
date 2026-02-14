@@ -1,4 +1,6 @@
 @import 'bootswatch/dist/flatly/variables';
+@import "shepherd.js/dist/css/shepherd.css";
+
 $enable-rfs: false; // Disable responsive font sizes
 
 /// MUI-inspired palette mappings (override Bootswatch defaults)
