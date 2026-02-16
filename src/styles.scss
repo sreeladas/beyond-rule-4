@@ -120,6 +120,123 @@ body {
 }
 
 
+/* ── Shepherd tour theme (matches tooltip style) ────── */
+.shepherd-element {
+  max-width: 420px;
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  border: 1px solid $gray-400;
+}
+
+.shepherd-arrow::before {
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px solid $gray-400;
+}
+
+.shepherd-content {
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.85);
+  color: $gray-300;
+}
+
+.shepherd-header {
+  background: transparent;
+  padding: 4px 8px 0;
+  border-bottom: none;
+}
+
+.shepherd-title {
+  display: none;
+}
+
+.shepherd-cancel-icon {
+  color: $gray-400;
+  &:hover { color: #fff; }
+}
+
+.shepherd-text {
+  padding: 16px;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: $gray-300;
+}
+
+.shepherd-footer {
+  padding: 0 16px 16px;
+  border-top: none;
+  background: transparent;
+}
+
+.shepherd-button {
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.82rem;
+  padding: 6px 16px;
+
+  &:last-child {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    border: 1px solid $gray-500;
+    &:hover { background: rgba(255, 255, 255, 0.25); }
+  }
+
+  &:first-child:not(:last-child) {
+    background: transparent;
+    color: $gray-400;
+    border: 1px solid $gray-500;
+    &:hover { background: rgba(255, 255, 255, 0.1); }
+  }
+}
+
+.shepherd-modal-overlay-container {
+  fill: rgba(0, 0, 0, 0.4);
+}
+
+/* ── Tooltip theme ──────────────────────────────────── */
+$tooltip-bg: rgba(0, 0, 0, 0.85);
+$tooltip-border: $gray-400;
+
+.tooltip-inner {
+  background-color: $tooltip-bg;
+  color: $gray-300;
+  font-size: 0.82rem;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid $tooltip-border;
+  max-width: 300px;
+}
+
+.tooltip .tooltip-arrow::before {
+  border-top-color: $tooltip-bg;
+}
+.bs-tooltip-bottom .tooltip-arrow::before,
+.bs-tooltip-auto[data-popper-placement^="bottom"] .tooltip-arrow::before {
+  border-bottom-color: $tooltip-bg;
+}
+.bs-tooltip-start .tooltip-arrow::before,
+.bs-tooltip-auto[data-popper-placement^="left"] .tooltip-arrow::before {
+  border-left-color: $tooltip-bg;
+}
+.bs-tooltip-end .tooltip-arrow::before,
+.bs-tooltip-auto[data-popper-placement^="right"] .tooltip-arrow::before {
+  border-right-color: $tooltip-bg;
+}
+
+/* ── Dark mode ──────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  .shepherd-element { border-color: $gray-600; }
+  .shepherd-arrow::before { border-color: $gray-600; }
+
+  .tooltip-inner { background-color: rgba(0, 0, 0, 0.9); color: $gray-300; border-color: $gray-600; }
+  .tooltip .tooltip-arrow::before { border-top-color: rgba(0, 0, 0, 0.9); }
+  .bs-tooltip-bottom .tooltip-arrow::before,
+  .bs-tooltip-auto[data-popper-placement^="bottom"] .tooltip-arrow::before { border-bottom-color: rgba(0, 0, 0, 0.9); }
+  .bs-tooltip-start .tooltip-arrow::before,
+  .bs-tooltip-auto[data-popper-placement^="left"] .tooltip-arrow::before { border-left-color: rgba(0, 0, 0, 0.9); }
+  .bs-tooltip-end .tooltip-arrow::before,
+  .bs-tooltip-auto[data-popper-placement^="right"] .tooltip-arrow::before { border-right-color: rgba(0, 0, 0, 0.9); }
+}
+
 @media (prefers-color-scheme: dark) {
   .ngx-charts {
     fill: $text-color-dark;

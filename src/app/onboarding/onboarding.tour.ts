@@ -1,74 +1,184 @@
 import Shepherd from 'shepherd.js';
 
-export function buildOnboardingTour() {
-  const tour = new Shepherd.Tour({
-    defaultStepOptions: {
-      scrollTo: true,
-      cancelIcon: { enabled: true }
-    }
-  });
+interface TourStep {
+  selector?: string;
+  text: string;
+  accordionId?: string;
+  position?: string;
+}
 
-  const steps = [
+function ensureAccordionOpen(accordionKey: string): Promise<void> {
+  return new Promise((resolve) => {
+    let attempts = 0;
+    const tryOpen = () => {
+      const panel = document.querySelector(
+        `[data-accordion="${accordionKey}"]`,
+      );
+      if (!panel) {
+        attempts++;
+        if (attempts < 30) {
+          setTimeout(tryOpen, 100);
+        } else {
+          resolve();
+        }
+        return;
+      }
+      const btn = panel.querySelector('button.collapsed');
+      if (!btn) {
+        resolve();
+        return;
+      }
+      (btn as HTMLElement).click();
+      setTimeout(resolve, 500);
+    };
+    tryOpen();
+  });
+}
+
+function getSampleDataSteps(): TourStep[] {
+  return [
+    {
+      text:
+        'This tool projects when your savings and investments could cover your living expenses permanently. ' +
+        'You are viewing sample data. You can edit any input while this guide is open — results update immediately.',
+    },
     {
       selector: '[data-tour="birth-date"]',
-      text:
-        'Set your age under Settings to correctly reflect projected dates and ages. ' +
-        'This affects growth by changing how long your money can compound, ' +
-        'and determines when Coast FIRE and FIRE can occur.'
+      accordionId: 'settings',
+      text: 'Your birthdate. Used to show your age at each projected milestone.',
+    },
+    {
+      selector: '[data-tour="retirement-age"]',
+      accordionId: 'settings',
+      text: 'The age you want to retire. The projection measures progress against this target.',
     },
     {
       selector: '[data-tour="starting-balance"]',
+      accordionId: 'net-worth',
       text:
-        'Check/update your current savings/investment balance under Starting Portfolio. ' +
-        'This is normally read from YNAB and kept in sync. ' +
-        'Changes here are simulation-only and not saved.'
+        'Your current savings and investments. This is the starting balance that compounds over time. ' +
+        'Replace the sample values with your own — rough numbers are fine.',
     },
     {
-      selector: '[data-tour="monthly-contribution"]',
+      selector: '[data-tour="monthly-contributions"]',
+      accordionId: 'contributions',
       text:
-        'Check/update the amount you invest each month under Contributions. ' +
-        'A primary driver of how quickly your portfolio grows.'
-    },
-    {
-      selector: '[data-tour="expected-return"]',
-      text:
-        'Assumed long-term return. ' +
-        'Strongly affects growth rate and long-term results.'
+        'How much you invest each month. ' +
+        'This is the single most impactful input — increasing it moves the projected date forward.',
     },
     {
       selector: '[data-tour="retirement-expenses"]',
+      accordionId: 'expenses',
+      position: 'top',
       text:
-        'Expected ongoing expenses in retirement. ' +
-        'Exclude temporary costs. Include age-related expenses. ' +
-        'Used to determine your FIRE target.'
+        'Your monthly living costs. The tool calculates how large your portfolio needs to be ' +
+        'to cover these expenses indefinitely using a safe withdrawal rate.',
     },
     {
-      selector: '[data-tour="forecast-chart"]',
+      selector: '[data-tour="forecast-results"]',
+      position: 'top',
       text:
-        'Shows projected portfolio value, Coast FIRE, and FIRE dates. ' +
-        'Updates immediately as inputs change.'
-    }
+        'Your results. All numbers update live as you change inputs above. ' +
+        'To use real data, connect your YNAB budget via the Authorize button in the menu.',
+    },
+    {
+      selector: '[data-tour="contribution-adjustments"]',
+      accordionId: 'adjustments',
+      text:
+        "Don't like the timeline? Plan contribution adjustments based on " +
+        'foreseeable life events — certification, promotions, new jobs.',
+    },
   ];
+}
 
-  steps.forEach((s, i) => {
-    tour.addStep({
-      attachTo: { element: s.selector, on: 'bottom' },
-      text: `${s.text}<br/><small>${i + 1} / ${steps.length}</small>`,
-      buttons: [
-        i > 0 && { text: 'Back', action: tour.back },
-        { text: i === steps.length - 1 ? 'Done' : 'Next', action: tour.next }
-      ].filter(Boolean)
-    });
+function getYnabConnectedSteps(): TourStep[] {
+  return [
+    {
+      text:
+        'Your YNAB budget is connected. ' +
+        'Your data is only used in this browser and is not stored on any server.',
+    },
+    {
+      selector: '[data-tour="starting-balance"]',
+      accordionId: 'net-worth',
+      text:
+        'Your starting balance from YNAB off-budget accounts. ' +
+        'You can override values here — overrides are not saved and will be lost on refresh.',
+    },
+    {
+      selector: '[data-tour="monthly-contributions"]',
+      accordionId: 'contributions',
+      text:
+        'Monthly contributions from YNAB category groups named ' +
+        'Financial Independence, Investments, or Retirement. ' +
+        "Add <code>BR4 + amount</code> to a category's notes to include extra contributions.",
+    },
+    {
+      selector: '[data-tour="retirement-expenses"]',
+      accordionId: 'expenses',
+      position: 'top',
+      text:
+        'Monthly expenses from your YNAB budget. ' +
+        'Debt and investment categories are excluded. ' +
+        "Add <code>BR4 FI amount</code> to a category's notes to override it.",
+    },
+    {
+      selector: '[data-tour="birth-date"]',
+      accordionId: 'settings',
+      text: 'Set your birthdate and retirement age. These set the timeline for all projections.',
+    },
+    {
+      selector: '[data-tour="forecast-results"]',
+      position: 'top',
+      text: 'Your results, updated live as you change inputs.',
+    },
+    {
+      selector: '[data-tour="contribution-adjustments"]',
+      accordionId: 'adjustments',
+      text:
+        "Don't like the timeline? Plan contribution adjustments based on " +
+        'foreseeable life events — certification, promotions, new jobs.',
+    },
+  ];
+}
+
+export function buildOnboardingTour(isUsingSampleData: boolean) {
+  const tour = new Shepherd.Tour({
+    defaultStepOptions: {
+      scrollTo: true,
+      cancelIcon: { enabled: true },
+    },
   });
 
-  tour.addStep({
-    text:
-      'This view helps you interpret the results of a financial model. ' +
-      'The outputs reflect the assumptions you entered — not a prediction. ' +
-      'Use the results to assess sufficiency, timing, and sensitivity to change.',
-    buttons: [{ text: 'Done', action: tour.complete }]
+  const steps = isUsingSampleData
+    ? getSampleDataSteps()
+    : getYnabConnectedSteps();
+
+  steps.forEach((s, i) => {
+    const stepOptions: any = {
+      text: `${s.text}<br/><small>${i + 1} / ${steps.length}</small>`,
+      buttons: [
+        i > 0 && { text: '<', action: tour.back },
+        {
+          text: i === steps.length - 1 ? 'Done' : '>',
+          action: i === steps.length - 1 ? tour.complete : tour.next,
+        },
+      ].filter(Boolean),
+    };
+
+    if (s.selector) {
+      stepOptions.attachTo = {
+        element: s.selector,
+        on: s.position || 'bottom',
+      };
+    }
+
+    if (s.accordionId) {
+      stepOptions.beforeShowPromise = () => ensureAccordionOpen(s.accordionId);
+    }
+
+    tour.addStep(stepOptions);
   });
 
   return tour;
 }
-

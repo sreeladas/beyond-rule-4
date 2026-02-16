@@ -29,7 +29,29 @@ export class YnabComponent implements OnInit {
 
   budgetForm: UntypedFormGroup;
   displayContributionInfo = true;
+  isBalanceHelpCollapsed = true;
+  isContributionHelpCollapsed = true;
+  isExpenseHelpCollapsed = true;
   currencyIsoCode = 'CAD';
+  availableCurrencies = [
+    'AUD',
+    'BRL',
+    'CAD',
+    'CHF',
+    'DKK',
+    'EUR',
+    'GBP',
+    'HKD',
+    'INR',
+    'JPY',
+    'MXN',
+    'NOK',
+    'NZD',
+    'SEK',
+    'SGD',
+    'USD',
+    'ZAR',
+  ];
   public safeWithdrawalRatePercentage = 4.0;
   public expectedAnnualGrowthRate = 7.0;
   public retirementAge = 60;
@@ -70,7 +92,7 @@ export class YnabComponent implements OnInit {
   constructor(
     private ynabService: YnabApiService,
     private formBuilder: UntypedFormBuilder,
-    private activatedRoute: ActivatedRoute
+    private activatedRoute: ActivatedRoute,
   ) {
     this.expenses = {
       ynab: {
@@ -88,7 +110,7 @@ export class YnabComponent implements OnInit {
     };
 
     const safeWithdrawalRatePercentageStorage = parseFloat(
-      window.localStorage.getItem('br4-safe-withdrawal-rate')
+      window.localStorage.getItem('br4-safe-withdrawal-rate'),
     );
     if (
       !!safeWithdrawalRatePercentageStorage &&
@@ -98,7 +120,7 @@ export class YnabComponent implements OnInit {
     }
 
     const expectedAnnualGrowthRateStorage = parseFloat(
-      window.localStorage.getItem('br4-expect-annual-growth-rate')
+      window.localStorage.getItem('br4-expect-annual-growth-rate'),
     );
     if (
       !!expectedAnnualGrowthRateStorage &&
@@ -112,9 +134,21 @@ export class YnabComponent implements OnInit {
     } catch {
       this.birthdate = null;
     }
+    if (!this.birthdate) {
+      this.birthdate = {
+        year: new Date().getFullYear() - 25,
+        month: 1,
+        day: 1,
+      };
+    }
+
+    const storedCurrency = window.localStorage.getItem('br4-currency');
+    if (storedCurrency) {
+      this.currencyIsoCode = storedCurrency;
+    }
 
     const retirementAgeStorage = parseFloat(
-      window.localStorage.getItem('br4-retirement-age')
+      window.localStorage.getItem('br4-retirement-age'),
     );
     if (!!retirementAgeStorage && !isNaN(retirementAgeStorage)) {
       this.retirementAge = retirementAgeStorage;
@@ -156,7 +190,7 @@ export class YnabComponent implements OnInit {
     this.isUsingSampleData = this.ynabService.isUsingSampleData();
 
     const formChanges = this.budgetForm.valueChanges.pipe(
-      debounce(() => timer(500))
+      debounce(() => timer(500)),
     );
     formChanges.subscribe(() => {
       this.handleFormChanges();
@@ -172,15 +206,15 @@ export class YnabComponent implements OnInit {
   recalculate() {
     const fiMonthlyExpenses = this.getMonthlyExpenses(
       this.budgetForm.value.categoryGroups,
-      'fiBudget'
+      'fiBudget',
     );
     const leanMonthlyExpenses = this.getMonthlyExpenses(
       this.budgetForm.value.categoryGroups,
-      'leanFiBudget'
+      'leanFiBudget',
     );
     const retrievedBudgetedMonthlyExpenses = this.getMonthlyExpenses(
       this.budgetForm.value.categoryGroups,
-      'retrievedBudgeted'
+      'retrievedBudgeted',
     );
 
     this.setNetWorth();
@@ -216,11 +250,11 @@ export class YnabComponent implements OnInit {
 
     result.annualSafeWithdrawalRate = Math.max(
       0,
-      this.safeWithdrawalRatePercentage / 100
+      this.safeWithdrawalRatePercentage / 100,
     );
     result.expectedAnnualGrowthRate = Math.max(
       0,
-      this.expectedAnnualGrowthRate / 100
+      this.expectedAnnualGrowthRate / 100,
     );
 
     if (taxRatios) {
@@ -234,6 +268,7 @@ export class YnabComponent implements OnInit {
       result.contributionAdjustments = storedAdjustments;
     }
 
+    result.isUsingSampleData = this.isUsingSampleData;
     result.roundAll();
     this.calculateInputChange.emit(result);
   }
@@ -270,7 +305,7 @@ export class YnabComponent implements OnInit {
     }));
     window.localStorage.setItem(
       'br4-contribution-adjustments',
-      JSON.stringify(serialized)
+      JSON.stringify(serialized),
     );
     this.recalculate();
   }
@@ -343,20 +378,29 @@ export class YnabComponent implements OnInit {
 
     this.categoryGroupsWithCategories =
       await this.ynabService.getCategoryGroupsWithCategories(this.budget.id);
-    this.currencyIsoCode = this.budget.currency_format
-      ? this.budget.currency_format.iso_code
-      : 'CAD';
+    const storedCurrency = window.localStorage.getItem('br4-currency');
+    if (storedCurrency) {
+      this.currencyIsoCode = storedCurrency;
+    } else if (this.budget.currency_format) {
+      this.currencyIsoCode = this.budget.currency_format.iso_code;
+    }
 
     this.includeHiddenYnabCategories = !!window.localStorage.getItem(
-      'br4-include-hidden-ynab-categories'
+      'br4-include-hidden-ynab-categories',
     );
 
     const selectedMonths = getSelectedMonths(
       this.currentMonth,
       this.months,
-      'previousChoice'
+      'previousChoice',
     );
     await this.selectMonths(selectedMonths.from.month, selectedMonths.to.month);
+  }
+
+  onCurrencyChange(newCurrency: string) {
+    this.currencyIsoCode = newCurrency;
+    window.localStorage.setItem('br4-currency', newCurrency);
+    this.recalculate();
   }
 
   toggleIncludeHiddenYnabCategories(newValue: boolean) {
@@ -364,7 +408,7 @@ export class YnabComponent implements OnInit {
     if (newValue) {
       window.localStorage.setItem(
         'br4-include-hidden-ynab-categories',
-        newValue.toString()
+        newValue.toString(),
       );
     } else {
       window.localStorage.removeItem('br4-include-hidden-ynab-categories');
@@ -385,18 +429,18 @@ export class YnabComponent implements OnInit {
     const mappedCategoryGroups = CategoryUtility.mapCategoryGroups(
       this.categoryGroupsWithCategories,
       months,
-      this.includeHiddenYnabCategories
+      this.includeHiddenYnabCategories,
     );
     const monthlyContribution = this.getMonthlyContribution(
       mappedCategoryGroups,
-      mappedAccounts
+      mappedAccounts,
     );
     this.contributionCategories = monthlyContribution.categories;
 
     this.resetForm(
       mappedCategoryGroups,
       monthlyContribution.value,
-      mappedAccounts
+      mappedAccounts,
     );
 
     this.recalculate();
@@ -419,7 +463,7 @@ export class YnabComponent implements OnInit {
 
   handlePercentageFormChanges() {
     const parsedSafeWithdrawalRatePercentage = Number.parseFloat(
-      this.budgetForm.value.safeWithdrawalRatePercentage
+      this.budgetForm.value.safeWithdrawalRatePercentage,
     );
     if (
       !Number.isNaN(parsedSafeWithdrawalRatePercentage) &&
@@ -429,29 +473,29 @@ export class YnabComponent implements OnInit {
       // local storage
       window.localStorage.setItem(
         'br4-safe-withdrawal-rate',
-        parsedSafeWithdrawalRatePercentage.toString()
+        parsedSafeWithdrawalRatePercentage.toString(),
       );
     }
     const parsedExpectedAnnualGrowthRate = Number.parseFloat(
-      this.budgetForm.value.expectedAnnualGrowthRate
+      this.budgetForm.value.expectedAnnualGrowthRate,
     );
     if (!Number.isNaN(parsedExpectedAnnualGrowthRate)) {
       this.expectedAnnualGrowthRate = parsedExpectedAnnualGrowthRate;
       // local storage
       window.localStorage.setItem(
         'br4-expect-annual-growth-rate',
-        parsedExpectedAnnualGrowthRate.toString()
+        parsedExpectedAnnualGrowthRate.toString(),
       );
     }
     const parsedRetirementAge = Number.parseFloat(
-      this.budgetForm.value.retirementAge
+      this.budgetForm.value.retirementAge,
     );
     if (!Number.isNaN(parsedRetirementAge)) {
       this.retirementAge = parsedRetirementAge;
       // local storage
       window.localStorage.setItem(
         'br4-retirement-age',
-        parsedRetirementAge.toString()
+        parsedRetirementAge.toString(),
       );
     }
   }
@@ -464,7 +508,7 @@ export class YnabComponent implements OnInit {
     ) {
       toggledHidden = true;
       this.toggleIncludeHiddenYnabCategories(
-        this.budgetForm.value.includeHiddenYnabCategories
+        this.budgetForm.value.includeHiddenYnabCategories,
       );
     }
 
@@ -473,7 +517,7 @@ export class YnabComponent implements OnInit {
     this.birthdate = this.budgetForm.value.birthdate;
     window.localStorage.setItem(
       'br4-birthdate',
-      JSON.stringify(this.birthdate)
+      JSON.stringify(this.birthdate),
     );
 
     const selectedBudget = this.budgetForm.value.selectedBudget;
@@ -490,7 +534,7 @@ export class YnabComponent implements OnInit {
     ) {
       this.selectMonths(
         this.budgetForm.value.selectedMonthA,
-        this.budgetForm.value.selectedMonthB
+        this.budgetForm.value.selectedMonthB,
       );
       return;
     }
@@ -630,11 +674,11 @@ export class YnabComponent implements OnInit {
       .filter((a) => !(a.closed || a.deleted))
       .map((account) => {
         const ynabBalance = ynab.utils.convertMilliUnitsToCurrencyAmount(
-          account.balance
+          account.balance,
         );
         const overrides = NoteUtility.getNoteOverrides(
           account.note,
-          ynabBalance
+          ynabBalance,
         );
 
         return this.formBuilder.group(
@@ -643,7 +687,7 @@ export class YnabComponent implements OnInit {
             ynabBalance,
             monthlyContribution: overrides.monthlyContribution,
             taxTreatment: overrides.taxTreatment,
-          })
+          }),
         );
       });
     return mapped;
@@ -652,7 +696,7 @@ export class YnabComponent implements OnInit {
   private getAccountBalance(
     account: ynab.Account,
     ynabBalance: number,
-    overrides: Overrides
+    overrides: Overrides,
   ) {
     if (overrides.contributionBudget !== undefined) {
       return overrides.contributionBudget;
@@ -743,19 +787,19 @@ export class YnabComponent implements OnInit {
               info: c.info,
               ignore: c.ignore,
               hidden: c.hidden,
-            })
-          )
+            }),
+          ),
         ),
-      })
+      }),
     );
 
     this.budgetForm.setControl(
       'categoryGroups',
-      this.formBuilder.array(categoryGroupFormGroups)
+      this.formBuilder.array(categoryGroupFormGroups),
     );
     this.budgetForm.setControl(
       'accounts',
-      this.formBuilder.array(mappedAccounts)
+      this.formBuilder.array(mappedAccounts),
     );
   }
 }

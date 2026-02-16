@@ -1,6 +1,11 @@
 <div class="mb-3">
   <div class="alert brand-primary-alert">
-    <h4 class="fw-light">FI Date</h4>
+    <h4 class="fw-light">
+      <span
+        ngbTooltip="The projected date your portfolio can cover your expenses indefinitely."
+        placement="bottom" triggers="click:blur hover" container="body"
+      >FI Date <i class="fas fa-info-circle small"></i></span>
+    </h4>
     <h2>
       <strong>{{ fiDate }}</strong> • {{ dateDistance }}
       <span *ngIf="fiAge !== null" class="fst-italic">• {{ fiAge }} old</span>
@@ -8,7 +13,12 @@
     <hr />
     <ul class="list-inline mb-0">
       <li class="list-inline-item">
-        <h5 class="fw-light">Lean FI</h5>
+        <h5 class="fw-light">
+          <span
+            ngbTooltip="Lean FI covers only essential expenses — the minimum needed to get by."
+            placement="bottom" triggers="click:blur hover" container="body"
+          >Lean FI <i class="fas fa-info-circle small"></i></span>
+        </h5>
       </li>
       <li class="list-inline-item"></li>
       <li class="list-inline-item">

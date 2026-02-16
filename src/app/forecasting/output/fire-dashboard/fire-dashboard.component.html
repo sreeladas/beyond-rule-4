@@ -19,7 +19,15 @@
         </div>
       </div>
       <div class="col-md-3 mb-3">
-        <div class="text-muted small">FIRE Number (Tax-Adjusted)</div>
+        <div
+          class="text-muted small"
+          ngbTooltip="The total portfolio value needed so that withdrawals at your safe withdrawal rate cover your annual expenses, adjusted for estimated taxes on withdrawals."
+          placement="top"
+          triggers="click:blur hover"
+          container="body"
+        >
+          FIRE Number (Tax-Adjusted) <i class="fas fa-info-circle"></i>
+        </div>
         <div class="h4 mb-0">{{ formatCurrency(calculateInput.fiNumber) }}</div>
       </div>
     </div>
@@ -27,7 +35,15 @@
 
   <!-- Coast FIRE Scenarios -->
   <div class="mb-4">
-    <h4 class="fw-light mb-3">Coast FIRE Numbers Today</h4>
+    <h4 class="fw-light mb-3">
+      <span
+        ngbTooltip="Coast FIRE is the amount you need saved today so that investment growth alone will reach your FIRE Number by retirement — without any further contributions."
+        placement="top"
+        triggers="click:blur hover"
+        container="body"
+        >Coast FIRE Numbers Today <i class="fas fa-info-circle small"></i
+      ></span>
+    </h4>
     <div class="row">
       <div class="col-md-3 mb-3">
         <div class="text-muted small">Conservative (+5 years)</div>
@@ -59,14 +75,20 @@
     </div>
   </div>
 
-  <!-- Coast Years Analysis -->
+  <!-- Years of Working at Coast -->
   <div class="mb-4">
-    <h4 class="fw-light mb-3">Coast Years Analysis</h4>
     <div class="row">
       <div class="col-md-3 mb-3">
-        <div class="text-muted small">Coast Working Years</div>
+        <div
+          class="text-muted small"
+          ngbTooltip="Your current portfolio would grow into enough to cover expenses in roughly this many years. In other words, if you do not contribute any more to savings, you would need to work this much longer."
+          placement="top"
+          triggers="click:blur hover"
+          container="body"
+        >
+          Years of Working at Coast <i class="fas fa-info-circle"></i>
+        </div>
         <div class="h4 mb-0">{{ calculateInput.coastYearsRange }}</div>
-        <div class="small text-muted">Based on the above assumptions, your current portfolio will groe into enough to cover expenses in roughly this many years. In other words, if you do not contribute any more to savings, you would need to work this much longer.</div>
       </div>
     </div>
   </div>

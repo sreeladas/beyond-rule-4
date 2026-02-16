@@ -33,22 +33,22 @@ export class ForecastingOutputComponent implements OnInit, OnChanges {
       this.forecast = new Forecast(this.calculateInput);
     }
   }
-ngAfterViewInit() {
-  if (!localStorage.getItem('onboardingComplete')) {
-    const tour = buildOnboardingTour();
-tour.on('complete', () =>
-  localStorage.setItem('onboardingComplete', 'true')
-);
-
-tour.on('cancel', () =>
-  localStorage.setItem('onboardingComplete', 'true')
-);
-
-tour.start();
+  ngAfterViewInit() {
+    if (!localStorage.getItem('onboardingComplete')) {
+      const tour = buildOnboardingTour(
+        this.calculateInput?.isUsingSampleData ?? true,
+      );
+      tour.on('complete', () =>
+        localStorage.setItem('onboardingComplete', 'true'),
+      );
+      tour.on('cancel', () =>
+        localStorage.setItem('onboardingComplete', 'true'),
+      );
+      tour.start();
+    }
   }
-}
 
-startOnboarding() {
-  buildOnboardingTour().start();
-}
+  startOnboarding() {
+    buildOnboardingTour(this.calculateInput?.isUsingSampleData ?? true).start();
+  }
 }

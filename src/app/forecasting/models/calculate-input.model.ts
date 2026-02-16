@@ -17,6 +17,7 @@ export class CalculateInput {
   birthdate: Birthdate = null;
   retirementAge = 60;
   contributionAdjustments: ContributionAdjustment[] = [];
+  isUsingSampleData = false;
 
   taxFreeRatio = 0.4;
   taxDeferredRatio = 0.4;
@@ -34,7 +35,7 @@ export class CalculateInput {
         leanFiPercentage: 0.7,
         expectedAnnualGrowthRate: 0.07,
       },
-      init
+      init,
     );
     this.roundAll();
   }

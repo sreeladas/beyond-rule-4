@@ -1,10 +1,14 @@
 <div class="row" *ngIf="calculateInput; else loading">
-<button type="button" (click)="startOnboarding()">
-  Explain this tool
-</button>
+  <button
+    type="button"
+    class="btn btn-sm btn-outline-secondary mb-3"
+    (click)="startOnboarding()"
+  >
+    <i class="fas fa-question-circle me-1"></i> Guide me through this
+  </button>
   <div class="col">
     <!-- Coast FIRE Investment Projection -->
-    <div class="mb-4">
+    <div class="mb-4" data-tour="forecast-results">
       <button
         class="btn btn-link w-100 text-start p-0"
         type="button"
