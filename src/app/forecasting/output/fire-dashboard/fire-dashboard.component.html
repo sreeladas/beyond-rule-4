@@ -1,13 +1,4 @@
 <div *ngIf="calculateInput">
-  <!-- Tax Information -->
-  <div class="mb-4 text-muted small">
-    Based on a blended tax rate of {{ blendedTaxRate.toFixed(1) }}%, calculated
-    from the current portfolio distribution of
-    {{ taxFreePercentage.toFixed(0) }}% tax-free,
-    {{ taxDeferredPercentage.toFixed(0) }}% tax-deferred, and
-    {{ taxablePercentage.toFixed(0) }}% taxable investments.
-  </div>
-
   <!-- FIRE Targets -->
   <div class="mb-4">
     <h4 class="fw-light mb-3">FIRE Numbers</h4>
@@ -20,15 +11,32 @@
       </div>
       <div class="col-md-3 mb-3">
         <div
-          class="text-muted small"
-          ngbTooltip="The total portfolio value needed so that withdrawals at your safe withdrawal rate cover your annual expenses, adjusted for estimated taxes on withdrawals."
-          placement="top"
-          triggers="click:blur hover"
-          container="body"
+          class="progress-card"
+          [style.--progress]="progressPercent(calculateInput.fiNumber) + '%'"
+          [ngbTooltip]="
+            progressPercent(calculateInput.fiNumber)
+              | number: '1.0-0' + '% funded'
+          "
         >
-          FIRE Number (Tax-Adjusted) <i class="fas fa-info-circle"></i>
+          <div
+            class="text-muted small"
+            ngbTooltip="The total portfolio value needed so that withdrawals at your 
+            safe withdrawal rate cover your annual expenses, adjusted for estimated taxes on withdrawals.
+            Based on a blended tax rate of {{ blendedTaxRate.toFixed(1) }}% ({{
+              taxFreePercentage.toFixed(0)
+            }}% tax-free, {{
+              taxDeferredPercentage.toFixed(0)
+            }}% tax-deferred, {{ taxablePercentage.toFixed(0) }}% taxable)."
+            placement="top"
+            triggers="click:blur hover"
+            container="body"
+          >
+            FIRE Number (Tax-Adjusted) <i class="fas fa-info-circle"></i>
+          </div>
+          <div class="h4 mb-0">
+            {{ formatCurrency(calculateInput.fiNumber) }}
+          </div>
         </div>
-        <div class="h4 mb-0">{{ formatCurrency(calculateInput.fiNumber) }}</div>
       </div>
     </div>
   </div>
@@ -46,30 +54,63 @@
     </h4>
     <div class="row">
       <div class="col-md-3 mb-3">
-        <div class="text-muted small">Conservative (+5 years)</div>
-        <div class="h4 mb-1">
-          {{ formatCurrency(calculateInput.coastFirePlusFive) }}
-        </div>
-        <div class="small text-muted">
-          Retire at age {{ calculateInput.retirementAge + 5 }}
+        <div
+          class="progress-card"
+          [style.--progress]="
+            progressPercent(calculateInput.coastFirePlusFive) + '%'
+          "
+          [ngbTooltip]="
+            progressPercent(calculateInput.coastFirePlusFive)
+              | number: '1.0-0' + '% funded'
+          "
+        >
+          <div class="text-muted small">Conservative (+5 years)</div>
+          <div class="h4 mb-1">
+            {{ formatCurrency(calculateInput.coastFirePlusFive) }}
+          </div>
+          <div class="small text-muted">
+            Retire at age {{ calculateInput.retirementAge + 5 }}
+          </div>
         </div>
       </div>
       <div class="col-md-3 mb-3">
-        <div class="text-muted small">Baseline</div>
-        <div class="h4 mb-1">
-          {{ formatCurrency(calculateInput.coastFireNumber) }}
-        </div>
-        <div class="small text-muted">
-          Retire at age {{ calculateInput.retirementAge }}
+        <div
+          class="progress-card"
+          [style.--progress]="
+            progressPercent(calculateInput.coastFireNumber) + '%'
+          "
+          [ngbTooltip]="
+            progressPercent(calculateInput.coastFireNumber)
+              | number: '1.0-0' + '% funded'
+          "
+        >
+          <div class="text-muted small">Baseline</div>
+          <div class="h4 mb-1">
+            {{ formatCurrency(calculateInput.coastFireNumber) }}
+          </div>
+          <div class="small text-muted">
+            Retire at age {{ calculateInput.retirementAge }}
+          </div>
         </div>
       </div>
       <div class="col-md-3 mb-3">
-        <div class="text-muted small">Aggressive (-5 years)</div>
-        <div class="h4 mb-1">
-          {{ formatCurrency(calculateInput.coastFireMinusFive) }}
-        </div>
-        <div class="small text-muted">
-          Retire at age {{ calculateInput.retirementAge - 5 }}
+        <div
+          class="progress-card"
+          [style.--progress]="
+            progressPercent(calculateInput.coastFireMinusFive) + '%'
+          "
+          [ngbTooltip]="
+            progressPercent(calculateInput.coastFireMinusFive)
+              | number: '1.0-0' + '% funded'
+          "
+        >
+          <div class="text-muted small">Aggressive (-5 years)</div>
+          <div class="h4 mb-1">
+            {{ formatCurrency(calculateInput.coastFireMinusFive) }}
+          </div>
+          <div class="small text-muted">
+            Retire at age {{ calculateInput.retirementAge - 5 }}
+          </div>
         </div>
       </div>
     </div>
@@ -77,19 +118,18 @@
 
   <!-- Years of Working at Coast -->
   <div class="mb-4">
+    <h4 class="fw-light mb-3">
+      <span
+        ngbTooltip="Your current portfolio would grow into enough to cover expenses in roughly this many years. In other words, if you do not contribute any more to savings, you would need to work this much longer."
+        placement="top"
+        triggers="click:blur hover"
+        container="body"
+      >
+        Years of Working at Coast <i class="fas fa-info-circle"></i>
+      </span>
+    </h4>
     <div class="row">
-      <div class="col-md-3 mb-3">
-        <div
-          class="text-muted small"
-          ngbTooltip="Your current portfolio would grow into enough to cover expenses in roughly this many years. In other words, if you do not contribute any more to savings, you would need to work this much longer."
-          placement="top"
-          triggers="click:blur hover"
-          container="body"
-        >
-          Years of Working at Coast <i class="fas fa-info-circle"></i>
-        </div>
-        <div class="h4 mb-0">{{ calculateInput.coastYearsRange }}</div>
-      </div>
+      <div class="h4 mb-0">{{ calculateInput.coastYearsRange }}</div>
     </div>
   </div>
 

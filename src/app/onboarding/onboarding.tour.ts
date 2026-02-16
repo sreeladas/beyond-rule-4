@@ -39,54 +39,68 @@ function getSampleDataSteps(): TourStep[] {
   return [
     {
       text:
-        'This tool projects when your savings and investments could cover your living expenses permanently. ' +
-        'You are viewing sample data. You can edit any input while this guide is open — results update immediately.',
+        'Welcome! This tool forecasts when your investments could cover your living expenses permanently.' +
+        '<br/><br/>' +
+        'You are viewing sample data. Edit any input as you go and results will update immediately.',
     },
     {
       selector: '[data-tour="birth-date"]',
       accordionId: 'settings',
-      text: 'Your birthdate. Used to show your age at each projected milestone.',
+      text: 'Enter your birthdate. This sets your timeline so milestones are shown at the age you would reach them.',
     },
     {
       selector: '[data-tour="retirement-age"]',
       accordionId: 'settings',
-      text: 'The age you want to retire. The projection measures progress against this target.',
+      text: 'Set your target retirement age. The forecast measures how far you are from this goal.',
     },
     {
       selector: '[data-tour="starting-balance"]',
       accordionId: 'net-worth',
       text:
-        'Your current savings and investments. This is the starting balance that compounds over time. ' +
-        'Replace the sample values with your own — rough numbers are fine.',
+        'Enter what you have saved and invested today. Rough numbers are fine.' +
+        '<br/><br/>' +
+        'The forecast assumes this is invested and growing at the recent average annual growth rate (7%). You can adjust ' +
+        'this expectation above. Note that saving without some sort of return will not produce these results.' +
+        '<br/><br/>' +
+        'The default currency used is CAD, but this can be updated in settings above.',
     },
     {
       selector: '[data-tour="monthly-contributions"]',
       accordionId: 'contributions',
       text:
-        'How much you invest each month. ' +
-        'This is the single most impactful input — increasing it moves the projected date forward.',
+        'Enter how much you invest each month.' +
+        '<br/><br/>' +
+        'This has the biggest impact on your timeline, and even small increases move the date forward.',
     },
     {
       selector: '[data-tour="retirement-expenses"]',
       accordionId: 'expenses',
       position: 'top',
       text:
-        'Your monthly living costs. The tool calculates how large your portfolio needs to be ' +
-        'to cover these expenses indefinitely using a safe withdrawal rate.',
+        'Enter your monthly living costs.' +
+        '<br/><br/>' +
+        'These determine how large your portfolio needs to grow before it can sustain you indefinitely.',
     },
     {
       selector: '[data-tour="forecast-results"]',
       position: 'top',
-      text:
-        'Your results. All numbers update live as you change inputs above. ' +
-        'To use real data, connect your YNAB budget via the Authorize button in the menu.',
+      text: 'Check your results here. They update live as you change inputs.',
     },
     {
       selector: '[data-tour="contribution-adjustments"]',
       accordionId: 'adjustments',
       text:
-        "Don't like the timeline? Plan contribution adjustments based on " +
-        'foreseeable life events — certification, promotions, new jobs.',
+        "Don't like your timeline?" +
+        '<br/><br/>' +
+        'Plan future changes to your contributions like a raise, a new job, or paying off a loan, and see how they shift your projected date.',
+    },
+    {
+      text:
+        'This tool works best with <b>YNAB</b> (You Need a Budget), an envelope-based budgetting app that helps you track ' +
+        'your spending, savings, and investments.' +
+        '<br/><br/>' +
+        'If you use YNAB, connect your budget via the Authorize button in the menu. ' +
+        'Your portfolio, contributions, and expenses will then be pulled in automatically.',
     },
   ];
 }
@@ -95,49 +109,69 @@ function getYnabConnectedSteps(): TourStep[] {
   return [
     {
       text:
-        'Your YNAB budget is connected. ' +
-        'Your data is only used in this browser and is not stored on any server.',
+        'Your YNAB budget is connected.' +
+        '<br/><br/>' +
+        'Your data stays in this browser and nothing is stored on any server.',
     },
     {
       selector: '[data-tour="starting-balance"]',
       accordionId: 'net-worth',
       text:
-        'Your starting balance from YNAB off-budget accounts. ' +
-        'You can override values here — overrides are not saved and will be lost on refresh.',
+        'Review your starting portfolio, pulled from YNAB off-budget accounts.' +
+        '<br/><br/>' +
+        'You can override any value here to explore what-if scenarios, but these are not stored and ' +
+        'will reset on refresh. To make changed persist, update the account balance in YNAB or add a ' +
+        'note with <code>FF amount</code> to set a static override.',
     },
     {
       selector: '[data-tour="monthly-contributions"]',
       accordionId: 'contributions',
       text:
-        'Monthly contributions from YNAB category groups named ' +
-        'Financial Independence, Investments, or Retirement. ' +
-        "Add <code>BR4 + amount</code> to a category's notes to include extra contributions.",
+        'Review your monthly contributions, pulled from YNAB groups named ' +
+        'Financial Independence, Investments, or Retirement.' +
+        '<br/><br/>' +
+        "Add <code>FF + amount</code> in an category's notes to include off-budget contributions like an employer match." +
+        '<br/><br/>' +
+        'Additionally use <code>FF +tax-free amount</code> or <code> FF +tax-deferred amount</code> (e.g. <code>FF +tax-free 240</code>) ' +
+        'to include contributions that are not reflected in your ynab plan, like an employer match to retirement contribution.',
     },
     {
       selector: '[data-tour="retirement-expenses"]',
       accordionId: 'expenses',
       position: 'top',
       text:
-        'Monthly expenses from your YNAB budget. ' +
-        'Debt and investment categories are excluded. ' +
-        "Add <code>BR4 FI amount</code> to a category's notes to override it.",
+        'Review your monthly expenses from YNAB. Debt and investment categories are excluded automatically.' +
+        '<br/><br/>' +
+        "Add <code>FF FI amount</code> in a category's notes to override what counts toward your FI budget.",
     },
     {
       selector: '[data-tour="birth-date"]',
       accordionId: 'settings',
-      text: 'Set your birthdate and retirement age. These set the timeline for all projections.',
+      text:
+        'Confirm your birthdate.' +
+        '<br/><br/>' +
+        'This sets your timeline so milestones are shown at the age you would reach them.',
+    },
+    {
+      selector: '[data-tour="retirement-age"]',
+      accordionId: 'settings',
+      text:
+        'Confirm your target retirement age.' +
+        '<br/><br/>' +
+        'Coast FIRE numbers are calculated based on this age.',
     },
     {
       selector: '[data-tour="forecast-results"]',
       position: 'top',
-      text: 'Your results, updated live as you change inputs.',
+      text: 'Check your results. They update live as you change any input above.',
     },
     {
       selector: '[data-tour="contribution-adjustments"]',
       accordionId: 'adjustments',
       text:
-        "Don't like the timeline? Plan contribution adjustments based on " +
-        'foreseeable life events — certification, promotions, new jobs.',
+        "Don't like your timeline?" +
+        '<br/><br/>' +
+        'Plan future changes to your contributions like a raise, a new job, or paying off a loan, and see how they shift your projected date.',
     },
   ];
 }

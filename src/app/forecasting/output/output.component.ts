@@ -48,7 +48,4 @@ export class ForecastingOutputComponent implements OnInit, OnChanges {
     }
   }
 
-  startOnboarding() {
-    buildOnboardingTour(this.calculateInput?.isUsingSampleData ?? true).start();
-  }
 }

@@ -35,6 +35,8 @@ export class FiTextComponent implements OnInit, OnChanges {
   leanFiDateDistance: string;
   leanFiAge: string;
 
+  isDetailCollapsed = true;
+
   constructor() {}
 
   ngOnInit() {}

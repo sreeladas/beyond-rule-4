@@ -109,8 +109,12 @@ export class YnabComponent implements OnInit {
       },
     };
 
+    // Migrate localStorage keys from br4- to ff-.
+    // TODO: Remove this migration in a future release.
+    this.migrateLocalStorageKeys();
+
     const safeWithdrawalRatePercentageStorage = parseFloat(
-      window.localStorage.getItem('br4-safe-withdrawal-rate'),
+      window.localStorage.getItem('ff-safe-withdrawal-rate'),
     );
     if (
       !!safeWithdrawalRatePercentageStorage &&
@@ -120,7 +124,7 @@ export class YnabComponent implements OnInit {
     }
 
     const expectedAnnualGrowthRateStorage = parseFloat(
-      window.localStorage.getItem('br4-expect-annual-growth-rate'),
+      window.localStorage.getItem('ff-expect-annual-growth-rate'),
     );
     if (
       !!expectedAnnualGrowthRateStorage &&
@@ -130,7 +134,7 @@ export class YnabComponent implements OnInit {
     }
 
     try {
-      this.birthdate = JSON.parse(window.localStorage.getItem('br4-birthdate'));
+      this.birthdate = JSON.parse(window.localStorage.getItem('ff-birthdate'));
     } catch {
       this.birthdate = null;
     }
@@ -142,13 +146,13 @@ export class YnabComponent implements OnInit {
       };
     }
 
-    const storedCurrency = window.localStorage.getItem('br4-currency');
+    const storedCurrency = window.localStorage.getItem('ff-currency');
     if (storedCurrency) {
       this.currencyIsoCode = storedCurrency;
     }
 
     const retirementAgeStorage = parseFloat(
-      window.localStorage.getItem('br4-retirement-age'),
+      window.localStorage.getItem('ff-retirement-age'),
     );
     if (!!retirementAgeStorage && !isNaN(retirementAgeStorage)) {
       this.retirementAge = retirementAgeStorage;
@@ -274,7 +278,7 @@ export class YnabComponent implements OnInit {
   }
 
   private loadContributionAdjustments() {
-    const stored = window.localStorage.getItem('br4-contribution-adjustments');
+    const stored = window.localStorage.getItem('ff-contribution-adjustments');
     if (!stored) {
       return [];
     }
@@ -304,7 +308,7 @@ export class YnabComponent implements OnInit {
       monthlyAdjustment: adj.monthlyAdjustment,
     }));
     window.localStorage.setItem(
-      'br4-contribution-adjustments',
+      'ff-contribution-adjustments',
       JSON.stringify(serialized),
     );
     this.recalculate();
@@ -365,7 +369,7 @@ export class YnabComponent implements OnInit {
   async selectBudget(budgetId: string) {
     this.calculateInputChange.emit(undefined);
     this.budget = await this.ynabService.getBudgetById(budgetId);
-    window.localStorage.setItem('br4-selected-budget', this.budget.id);
+    window.localStorage.setItem('ff-selected-budget', this.budget.id);
 
     this.months = this.budget.months;
 
@@ -378,7 +382,7 @@ export class YnabComponent implements OnInit {
 
     this.categoryGroupsWithCategories =
       await this.ynabService.getCategoryGroupsWithCategories(this.budget.id);
-    const storedCurrency = window.localStorage.getItem('br4-currency');
+    const storedCurrency = window.localStorage.getItem('ff-currency');
     if (storedCurrency) {
       this.currencyIsoCode = storedCurrency;
     } else if (this.budget.currency_format) {
@@ -386,7 +390,7 @@ export class YnabComponent implements OnInit {
     }
 
     this.includeHiddenYnabCategories = !!window.localStorage.getItem(
-      'br4-include-hidden-ynab-categories',
+      'ff-include-hidden-ynab-categories',
     );
 
     const selectedMonths = getSelectedMonths(
@@ -399,7 +403,7 @@ export class YnabComponent implements OnInit {
 
   onCurrencyChange(newCurrency: string) {
     this.currencyIsoCode = newCurrency;
-    window.localStorage.setItem('br4-currency', newCurrency);
+    window.localStorage.setItem('ff-currency', newCurrency);
     this.recalculate();
   }
 
@@ -407,11 +411,11 @@ export class YnabComponent implements OnInit {
     this.includeHiddenYnabCategories = newValue;
     if (newValue) {
       window.localStorage.setItem(
-        'br4-include-hidden-ynab-categories',
+        'ff-include-hidden-ynab-categories',
         newValue.toString(),
       );
     } else {
-      window.localStorage.removeItem('br4-include-hidden-ynab-categories');
+      window.localStorage.removeItem('ff-include-hidden-ynab-categories');
     }
   }
 
@@ -472,7 +476,7 @@ export class YnabComponent implements OnInit {
       this.safeWithdrawalRatePercentage = parsedSafeWithdrawalRatePercentage;
       // local storage
       window.localStorage.setItem(
-        'br4-safe-withdrawal-rate',
+        'ff-safe-withdrawal-rate',
         parsedSafeWithdrawalRatePercentage.toString(),
       );
     }
@@ -483,7 +487,7 @@ export class YnabComponent implements OnInit {
       this.expectedAnnualGrowthRate = parsedExpectedAnnualGrowthRate;
       // local storage
       window.localStorage.setItem(
-        'br4-expect-annual-growth-rate',
+        'ff-expect-annual-growth-rate',
         parsedExpectedAnnualGrowthRate.toString(),
       );
     }
@@ -494,7 +498,7 @@ export class YnabComponent implements OnInit {
       this.retirementAge = parsedRetirementAge;
       // local storage
       window.localStorage.setItem(
-        'br4-retirement-age',
+        'ff-retirement-age',
         parsedRetirementAge.toString(),
       );
     }
@@ -515,10 +519,7 @@ export class YnabComponent implements OnInit {
     this.handlePercentageFormChanges();
 
     this.birthdate = this.budgetForm.value.birthdate;
-    window.localStorage.setItem(
-      'br4-birthdate',
-      JSON.stringify(this.birthdate),
-    );
+    window.localStorage.setItem('ff-birthdate', JSON.stringify(this.birthdate));
 
     const selectedBudget = this.budgetForm.value.selectedBudget;
     if (this.budget.id !== selectedBudget) {
@@ -545,7 +546,7 @@ export class YnabComponent implements OnInit {
   private setInitialSelectedBudget(): string {
     let selectedBudget = 'last-used';
 
-    const storageBudget = window.localStorage.getItem('br4-selected-budget');
+    const storageBudget = window.localStorage.getItem('ff-selected-budget');
     if (storageBudget && this.budgets.some((b) => b.id === storageBudget)) {
       selectedBudget = storageBudget;
     }
@@ -801,5 +802,26 @@ export class YnabComponent implements OnInit {
       'accounts',
       this.formBuilder.array(mappedAccounts),
     );
+  }
+
+  // TODO: Remove this migration in a future release.
+  private migrateLocalStorageKeys() {
+    const legacyKeys = [
+      'safe-withdrawal-rate',
+      'expect-annual-growth-rate',
+      'birthdate',
+      'currency',
+      'retirement-age',
+      'selected-budget',
+      'include-hidden-ynab-categories',
+      'contribution-adjustments',
+      'quick-months',
+    ];
+    for (const key of legacyKeys) {
+      const oldVal = window.localStorage.getItem(`br4-${key}`);
+      if (oldVal !== null && window.localStorage.getItem(`ff-${key}`) === null) {
+        window.localStorage.setItem(`ff-${key}`, oldVal);
+      }
+    }
   }
 }

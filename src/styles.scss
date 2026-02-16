@@ -126,12 +126,14 @@ body {
   border-radius: 6px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
   border: 1px solid $gray-400;
+  background: transparent;
 }
 
 .shepherd-arrow::before {
   background: rgba(0, 0, 0, 0.85);
   border: 1px solid $gray-400;
 }
+
 
 .shepherd-content {
   border-radius: 6px;
@@ -159,6 +161,10 @@ body {
   font-size: 0.82rem;
   line-height: 1.5;
   color: $gray-300;
+
+  @media (min-width: 768px) {
+    font-size: 0.92rem;
+  }
 }
 
 .shepherd-footer {
@@ -190,6 +196,10 @@ body {
 
 .shepherd-modal-overlay-container {
   fill: rgba(0, 0, 0, 0.4);
+}
+
+.shepherd-target {
+  box-shadow: 0 0 0 4px rgba(255,255,255,0.15);
 }
 
 /* ── Tooltip theme ──────────────────────────────────── */
@@ -224,7 +234,10 @@ $tooltip-border: $gray-400;
 
 /* ── Dark mode ──────────────────────────────────────── */
 @media (prefers-color-scheme: dark) {
-  .shepherd-element { border-color: $gray-600; }
+  .shepherd-element { 
+    border-color: $gray-600;
+    background: transparent; 
+  }
   .shepherd-arrow::before { border-color: $gray-600; }
 
   .tooltip-inner { background-color: rgba(0, 0, 0, 0.9); color: $gray-300; border-color: $gray-600; }

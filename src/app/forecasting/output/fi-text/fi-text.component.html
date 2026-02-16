@@ -3,12 +3,15 @@
     <h4 class="fw-light">
       <span
         ngbTooltip="The projected date your portfolio can cover your expenses indefinitely."
-        placement="bottom" triggers="click:blur hover" container="body"
-      >FI Date <i class="fas fa-info-circle small"></i></span>
+        placement="bottom"
+        triggers="click:blur hover"
+        container="body"
+        >FI Date <i class="fas fa-info-circle small"></i
+      ></span>
     </h4>
     <h2>
       <strong>{{ fiDate }}</strong> • {{ dateDistance }}
-      <span *ngIf="fiAge !== null" class="fst-italic">• {{ fiAge }} old</span>
+      <span *ngIf="fiAge !== null" class="fst-italic">• age {{ fiAge }}</span>
     </h2>
     <hr />
     <ul class="list-inline mb-0">
@@ -16,8 +19,11 @@
         <h5 class="fw-light">
           <span
             ngbTooltip="Lean FI covers only essential expenses — the minimum needed to get by."
-            placement="bottom" triggers="click:blur hover" container="body"
-          >Lean FI <i class="fas fa-info-circle small"></i></span>
+            placement="bottom"
+            triggers="click:blur hover"
+            container="body"
+            >Lean FI <i class="fas fa-info-circle small"></i
+          ></span>
         </h5>
       </li>
       <li class="list-inline-item"></li>
@@ -25,57 +31,79 @@
         <h4>
           {{ leanFiDate }} • {{ leanFiDateDistance }}
           <span *ngIf="leanFiAge !== null" class="fst-italic"
-            >• {{ leanFiAge }} old</span
+            >• age {{ leanFiAge }}</span
           >
         </h4>
       </li>
     </ul>
   </div>
   <div class="pb-1">
-    <p>
-      At a safe withdrawal rate of <strong>{{ safeWithdrawalRate }}%</strong>,
-      Financial Independence is reached at a Net Worth of
-      {{ safeWithdrawalTimes }} times annual expenses.
-    </p>
-    <p>
-      With annual expenses of
-      <strong>{{
-        calculateInput.annualExpenses
-          | currency : calculateInput.currencyIsoCode
-      }}</strong
-      >,
-      <span *ngIf="calculateInput.monthFromName != calculateInput.monthToName"
-        >between {{ calculateInput.monthFromName }} and
-        {{ calculateInput.monthToName }},
-      </span>
-      we're aiming for a Net Worth of
-      <strong>{{ fiNumber | currency : calculateInput.currencyIsoCode }}</strong
-      >.
-    </p>
-    <p>
-      At <strong>{{ expectedAnnualGrowthRate }}%</strong> returns, that Net
-      Worth is forecasted to be <strong>{{ fiDate }}</strong
-      >; {{ dateDistance }} from the first month.
-      <span *ngIf="fiAge !== null"
-        >You'll be <strong>{{ fiAge }}</strong> old at that time.</span
-      >
-      <span *ngIf="fiMonthForecast">
-        By that point, Net Worth is at
-        <strong>{{
-          fiMonthForecast.netWorth | currency : calculateInput.currencyIsoCode
-        }}</strong
-        >. Of that total, contributions account for
-        <strong>{{
-          fiMonthForecast.totalContributions
-            | currency : calculateInput.currencyIsoCode
-        }}</strong>
-        while
-        <strong>{{
-          fiMonthForecast.totalReturns
-            | currency : calculateInput.currencyIsoCode
-        }}</strong>
-        is earned returns.
-      </span>
-    </p>
+    <button
+      class="btn btn-link btn-sm p-0 text-muted"
+      type="button"
+      (click)="isDetailCollapsed = !isDetailCollapsed"
+      [attr.aria-expanded]="!isDetailCollapsed"
+    >
+      Detailed breakdown
+      <i
+        class="fas"
+        [class.fa-chevron-down]="isDetailCollapsed"
+        [class.fa-chevron-up]="!isDetailCollapsed"
+      ></i>
+    </button>
+    <div [ngbCollapse]="isDetailCollapsed">
+      <div class="mt-2">
+        <p>
+          At a safe withdrawal rate of
+          <strong>{{ safeWithdrawalRate }}%</strong>, Financial Independence is
+          reached at a Net Worth of {{ safeWithdrawalTimes }} times annual
+          expenses.
+        </p>
+        <p>
+          With annual expenses of
+          <strong>{{
+            calculateInput.annualExpenses
+              | currency: calculateInput.currencyIsoCode
+          }}</strong
+          >,
+          <span
+            *ngIf="calculateInput.monthFromName != calculateInput.monthToName"
+            >between {{ calculateInput.monthFromName }} and
+            {{ calculateInput.monthToName }},
+          </span>
+          we're aiming for a Net Worth of
+          <strong>{{
+            fiNumber | currency: calculateInput.currencyIsoCode
+          }}</strong
+          >.
+        </p>
+        <p>
+          At <strong>{{ expectedAnnualGrowthRate }}%</strong> returns, that Net
+          Worth is forecasted to be <strong>{{ fiDate }}</strong
+          >; {{ dateDistance }} from the first month.
+          <span *ngIf="fiAge !== null"
+            >You'll be <strong>{{ fiAge }}</strong> old at that time.</span
+          >
+          <span *ngIf="fiMonthForecast">
+            By that point, Net Worth is at
+            <strong>{{
+              fiMonthForecast.netWorth
+                | currency: calculateInput.currencyIsoCode
+            }}</strong
+            >. Of that total, contributions account for
+            <strong>{{
+              fiMonthForecast.totalContributions
+                | currency: calculateInput.currencyIsoCode
+            }}</strong>
+            while
+            <strong>{{
+              fiMonthForecast.totalReturns
+                | currency: calculateInput.currencyIsoCode
+            }}</strong>
+            is earned returns.
+          </span>
+        </p>
+      </div>
+    </div>
   </div>
 </div>

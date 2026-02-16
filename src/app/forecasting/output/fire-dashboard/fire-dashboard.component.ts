@@ -66,12 +66,26 @@ export class FireDashboardComponent implements OnInit, OnChanges {
   }
 
   formatCurrency(amount: number): string {
+    const symbol = this.currencySymbol;
     if (amount >= 1_000_000) {
-      return `$${(amount / 1_000_000).toFixed(2)}M`;
+      return `${symbol}${(amount / 1_000_000).toFixed(2)}M`;
     } else if (amount >= 1_000) {
-      return `$${(amount / 1_000).toFixed(1)}k`;
+      return `${symbol}${(amount / 1_000).toFixed(1)}k`;
     } else {
-      return `$${amount.toLocaleString()}`;
+      return `${symbol}${amount.toLocaleString()}`;
+    }
+  }
+
+  private get currencySymbol(): string {
+    try {
+      return (0).toLocaleString(undefined, {
+        style: 'currency',
+        currency: this.calculateInput?.currencyIsoCode || 'CAD',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).replace(/\d/g, '').trim();
+    } catch {
+      return '$';
     }
   }
 
@@ -102,5 +116,10 @@ export class FireDashboardComponent implements OnInit, OnChanges {
     return this.calculateInput
       ? this.calculateInput.investmentIncomeRatio * 100
       : 0;
+  }
+
+  progressPercent(target: number): number {
+    if (!this.calculateInput || !target || target <= 0) return 0;
+    return Math.min(100, (this.calculateInput.netWorth / target) * 100);
   }
 }

@@ -1,78 +1,59 @@
-# Beyond Rule 4
+# fastFIREward
 
-<a href="https://beyondrule4.jmmorrissey.com/" target="_blank">
-  <img src="logo.png" alt="Beyond Rule 4 Logo" width="64"/>
-</a>
+A Financial Independence (FIRE) forecasting tool that integrates with the YNAB (You Need A Budget) API.
 
+Forked from [Beyond Rule 4](https://beyondrule4.jmmorrissey.com/) which received an [honorable mention](https://www.youneedabudget.com/announcing-the-ynab-api-contest-winners/) in the YNAB API contest.
 
-[Live Site](https://beyondrule4.jmmorrissey.com)
+## Features
 
-This project is a Financial Independence forecasting tool built with the intent of using the YNAB API.
+- Projects when savings and investments can cover living expenses permanently
+- Pulls account balances, contributions, and expenses directly from YNAB
+- Coast FIRE, Lean FI, and full FI projections with tax-adjusted FIRE numbers
+- Contribution adjustments for life events (promotions, house purchase, etc.)
+- Expense impact analysis — see how each spending category affects your FI date
+- Guided onboarding tour for new users
+- Multi-currency support
+- Works with sample data for users not connected to YNAB
+- All data stays in the browser — nothing is stored on any server
 
-It ended up getting an [honorable mention](https://www.youneedabudget.com/announcing-the-ynab-api-contest-winners/). Not too shabby. 
+## Dev Instructions
 
-# Dev Instructions
+### Development server
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 1.7.3.
+Run `ng serve` and navigate to `http://localhost:4200/`.
 
-## Development server
+### Build
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
+Run `ng build` to build the project. Build artifacts are stored in `dist/`.
 
-## Code scaffolding
+### Running in Docker
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
-
-## Build
-
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory. Use the `--prod` flag for a production build.
-
-## Running unit tests
-
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
-
-## Running end-to-end tests
-
-Run `ng e2e` to execute the end-to-end tests via [Protractor](http://www.protractortest.org/).
-
-## Further help
-
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI README](https://github.com/angular/angular-cli/blob/master/README.md).
-
-## Running the application in Docker
-
-### Quick Start (uses default dev localhost token)
-
-Build the container:
+Build and run:
 
 ```shell
-$ docker build -t br4 .
+docker build -t fastfi .
+docker run --name fastfi -d -p 4200:80 fastfi
 ```
 
-Then run the container:
+Navigate to http://localhost:4200.
+
+### Using custom YNAB OAuth tokens
+
+Register your own [YNAB API OAuth Application](https://api.youneedabudget.com/), then:
 
 ```shell
-$ docker run --name br4 -d -p 4200:80 br4
+docker build -t fastfi .
+docker run --name fastfi -d -p 8080:80 --env APP_URL="http://localhost:8080" --env CLIENT_ID="<CLIENT_ID_FROM_YNAB>" fastfi
 ```
 
-Navigate to http://localhost:4200 to view the application.
+## YNAB Note Commands
 
-### Using custom tokens
+Override values pulled from YNAB by adding commands to category or account notes:
 
-You can utilize your own [YNAB API OAuth Application Token](https://api.youneedabudget.com/) by injecting environment variables.
-
-Your Client ID and Redirect URI(s) will be used when running your container. 
-
-Build the container:
-
-```shell
-$ docker build -t br4 .
-```
-
-Then run the container:
-
-```shell
-$ docker run --name br4 -d -p 8080:80 --env APP_URL="http://localhost:8080" --env CLIENT_ID="<CLIENT_ID_FROM_YNAB>" br4
-```
-
-Navigate to http://localhost:8080 to view the application. Note: This example uses port 8080, which will be required in the Redirect URI when registering your OAuth application. You are free to use other ports.
+| Command | Where | Effect |
+|---------|-------|--------|
+| `FF + amount` | Category/Account Notes | Override balance or contribution with a specific amount |
+| `FF +` | Category/Account Notes | Include YNAB balance regardless of group name |
+| `FF +m amount` | Account Notes | Log a monthly contribution from an account |
+| `FF FI amount` | Category Notes | Override the FI budget for a category |
+| `FF LFI amount` | Category Notes | Override the Lean FI budget for a category |

@@ -99,14 +99,19 @@ export default class NoteUtility {
     return override;
   }
 
+  // Support both 'ff' (new) and 'br4' (legacy) prefixes.
+  // TODO: Remove 'br4' fallback in a future release.
+  private static readonly COMMAND_PREFIXES = ['ff', 'br4'];
+
   private static getCommands(originalNote: string, originValue: number) {
     const note = originalNote.toLowerCase();
-    const commandPrefix = 'br4';
-    if (note.indexOf(commandPrefix) === -1) {
+
+    const prefix = this.COMMAND_PREFIXES.find((p) => note.indexOf(p) !== -1);
+    if (!prefix) {
       return [];
     }
 
-    const lines = note.split(commandPrefix);
+    const lines = note.split(prefix);
     if (!lines || !lines.length) {
       return [];
     }

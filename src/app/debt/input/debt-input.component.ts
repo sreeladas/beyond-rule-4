@@ -36,6 +36,13 @@ export class DebtInputComponent implements OnInit {
   isUsingSampleData = false;
 
   constructor(private ynabService: YnabApiService) {
+    // TODO: Remove this migration in a future release.
+    for (const key of ['selected-budget', 'debt-settings', 'debt-adjustments']) {
+      const oldVal = window.localStorage.getItem(`br4-${key}`);
+      if (oldVal !== null && window.localStorage.getItem(`ff-${key}`) === null) {
+        window.localStorage.setItem(`ff-${key}`, oldVal);
+      }
+    }
     this.loadAdjustments();
     this.loadDebtSettings();
   }
@@ -44,7 +51,7 @@ export class DebtInputComponent implements OnInit {
     this.isUsingSampleData = this.ynabService.isUsingSampleData();
     this.budgets = await this.ynabService.getBudgets();
 
-    const storageBudgetId = window.localStorage.getItem('br4-selected-budget');
+    const storageBudgetId = window.localStorage.getItem('ff-selected-budget');
     if (storageBudgetId && this.budgets.some((b) => b.id === storageBudgetId)) {
       this.selectedBudgetId = storageBudgetId;
     } else if (this.budgets.length > 0) {
@@ -58,13 +65,13 @@ export class DebtInputComponent implements OnInit {
 
   async onBudgetSelect(budgetId: string) {
     this.selectedBudgetId = budgetId;
-    window.localStorage.setItem('br4-selected-budget', budgetId);
+    window.localStorage.setItem('ff-selected-budget', budgetId);
     await this.onBudgetChange();
   }
 
   async onBudgetChange() {
     if (!this.selectedBudgetId) return;
-    window.localStorage.setItem('br4-selected-budget', this.selectedBudgetId);
+    window.localStorage.setItem('ff-selected-budget', this.selectedBudgetId);
 
     const budget = await this.ynabService.getBudgetById(this.selectedBudgetId);
     this.debtAccounts = budget.accounts
@@ -135,7 +142,7 @@ export class DebtInputComponent implements OnInit {
 
   private saveDebtSettings() {
     window.localStorage.setItem(
-      'br4-debt-settings',
+      'ff-debt-settings',
       JSON.stringify({
         currentRate: this.currentRate,
         endDate: this.endDate,
@@ -145,7 +152,7 @@ export class DebtInputComponent implements OnInit {
   }
 
   private loadDebtSettings() {
-    const stored = window.localStorage.getItem('br4-debt-settings');
+    const stored = window.localStorage.getItem('ff-debt-settings');
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
@@ -160,13 +167,13 @@ export class DebtInputComponent implements OnInit {
 
   private saveAdjustments() {
     window.localStorage.setItem(
-      'br4-debt-adjustments',
+      'ff-debt-adjustments',
       JSON.stringify(this.adjustments),
     );
   }
 
   private loadAdjustments() {
-    const stored = window.localStorage.getItem('br4-debt-adjustments');
+    const stored = window.localStorage.getItem('ff-debt-adjustments');
     if (stored) {
       try {
         const parsed = JSON.parse(stored);

@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 
 import { CalculateInput } from './models/calculate-input.model';
+import { buildOnboardingTour } from '../onboarding/onboarding.tour';
 
 @Component({
   selector: 'app-forecasting',
@@ -15,5 +16,9 @@ export class ForecastingComponent implements OnInit {
 
   onCalculateInputChange($event) {
     this.calculateInput = $event;
+  }
+
+  startOnboarding() {
+    buildOnboardingTour(this.calculateInput?.isUsingSampleData ?? true).start();
   }
 }

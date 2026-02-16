@@ -15,16 +15,16 @@ export type QuickSelectMonthChoice =
 export const getSelectedMonths = (
   currentMonth: MonthDetail,
   months: MonthDetail[],
-  selectedChoice: QuickSelectMonthChoice
+  selectedChoice: QuickSelectMonthChoice,
 ): SelectedMonths => {
   let currentMonthIdx = 0;
 
   let choice = selectedChoice;
   if (choice !== 'previousChoice') {
-    window.localStorage.setItem('br4-quick-months', choice);
+    window.localStorage.setItem('ff-quick-months', choice);
   }
   if (selectedChoice === 'previousChoice') {
-    const fromStorage = window.localStorage.getItem('br4-quick-months');
+    const fromStorage = window.localStorage.getItem('ff-quick-months');
     if (fromStorage) {
       choice = fromStorage as QuickSelectMonthChoice;
     } else {

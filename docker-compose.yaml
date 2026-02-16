@@ -1,9 +1,9 @@
 services:
-  br4:
-    image: br4
+  fastfi:
+    image: fastfi
     build: .
     ports:
       - "8080:80"
     env_file: '.env'
-    container_name: br4
+    container_name: fastfi
     restart: unless-stopped

@@ -3,6 +3,24 @@
   margin-right: 2rem;
 }
 
+.progress-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: var(--progress, 0%);
+  background: var(--bs-brand-100);
+  outline: var(--bs-brand-100) solid 1px;
+  opacity: 0.3;
+  transition: height 0.4s ease;
+}
+
 @media (max-width: 768px) {
   .list-inline-item {
     margin-right: 0;
