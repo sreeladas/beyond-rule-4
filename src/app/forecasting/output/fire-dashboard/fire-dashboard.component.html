@@ -14,9 +14,11 @@
           class="progress-card"
           [style.--progress]="progressPercent(calculateInput.fiNumber) + '%'"
           [ngbTooltip]="
-            progressPercent(calculateInput.fiNumber)
-              | number: '1.0-0' + '% funded'
+            (progressPercent(calculateInput.fiNumber) | number: '1.0-0') +
+            '% funded'
           "
+          triggers="hover"
+          container="body"
         >
           <div
             class="text-muted small"
@@ -60,9 +62,11 @@
             progressPercent(calculateInput.coastFirePlusFive) + '%'
           "
           [ngbTooltip]="
-            progressPercent(calculateInput.coastFirePlusFive)
-              | number: '1.0-0' + '% funded'
+            (progressPercent(calculateInput.coastFirePlusFive)
+              | number: '1.0-0') + '% funded'
           "
+          triggers="hover"
+          container="body"
         >
           <div class="text-muted small">Conservative (+5 years)</div>
           <div class="h4 mb-1">
@@ -80,9 +84,11 @@
             progressPercent(calculateInput.coastFireNumber) + '%'
           "
           [ngbTooltip]="
-            progressPercent(calculateInput.coastFireNumber)
-              | number: '1.0-0' + '% funded'
+            (progressPercent(calculateInput.coastFireNumber)
+              | number: '1.0-0') + '% funded'
           "
+          triggers="hover"
+          container="body"
         >
           <div class="text-muted small">Baseline</div>
           <div class="h4 mb-1">
@@ -100,9 +106,11 @@
             progressPercent(calculateInput.coastFireMinusFive) + '%'
           "
           [ngbTooltip]="
-            progressPercent(calculateInput.coastFireMinusFive)
-              | number: '1.0-0' + '% funded'
+            (progressPercent(calculateInput.coastFireMinusFive)
+              | number: '1.0-0') + '% funded'
           "
+          triggers="hover"
+          container="body"
         >
           <div class="text-muted small">Aggressive (-5 years)</div>
           <div class="h4 mb-1">
