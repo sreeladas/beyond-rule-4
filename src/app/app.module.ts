@@ -6,6 +6,7 @@ import { AppRoutingModule } from './app-routing.module';
 import { NavigationModule } from './navigation/navigation.module';
 import { ForecastingModule } from './forecasting/forecasting.module';
 import { DebtModule } from './debt/debt.module';
+import { HouseholdSplitModule } from './household-split/household-split.module';
 import { YnabConnectModule } from './ynab-connect/ynab-connect.module';
 import { YnabApiModule } from './ynab-api/ynab-api.module';
 
@@ -19,6 +20,7 @@ import { AppComponent } from './app.component';
     NavigationModule,
     ForecastingModule,
     DebtModule,
+    HouseholdSplitModule,
     YnabConnectModule,
     YnabApiModule,
     AppRoutingModule,

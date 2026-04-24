@@ -1,0 +1,120 @@
+<div class="mx-xl-5 mb-4">
+  <h1 class="mb-4">Household Split</h1>
+
+  <div *ngIf="isUsingSampleData" class="alert alert-info small">
+    Using sample data. Authorize with YNAB to see your accounts.
+  </div>
+
+  <div class="card mb-4">
+    <div class="card-body">
+      <div class="row g-3 align-items-end">
+        <div class="col-sm-6">
+          <label class="form-label small">Budget</label>
+          <select
+            class="form-select form-select-sm"
+            [ngModel]="selectedBudgetId"
+            (ngModelChange)="onBudgetChange($event)"
+          >
+            <option *ngFor="let b of budgets" [value]="b.id">{{ b.name }}</option>
+          </select>
+        </div>
+        <div class="col-sm-6">
+          <label class="form-label small d-block">Date range</label>
+          <div class="btn-group w-100" role="group">
+            <button
+              *ngFor="let d of daysOptions"
+              type="button"
+              class="btn btn-sm"
+              [class.btn-primary]="days === d"
+              [class.btn-outline-primary]="days !== d"
+              (click)="onDaysChange(d)"
+            >
+              Last {{ d }} days
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4" *ngIf="ownerCodes.length">
+    <div class="card-body">
+      <h5 class="card-title mb-2">Owner names</h5>
+      <p class="small text-muted mb-3">
+        Detected from the first word of each account name. Edit the display
+        names below — saved to your browser only.
+      </p>
+      <div class="row g-3">
+        <div class="col-sm-6 col-md-4" *ngFor="let code of ownerCodes">
+          <label class="form-label small">Code: <code>{{ code }}</code></label>
+          <input
+            type="text"
+            class="form-control form-control-sm"
+            [(ngModel)]="ownerNames[code]"
+            (blur)="onOwnerNameChange()"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4" *ngIf="groupOptions.length">
+    <div class="card-body">
+      <h5 class="card-title mb-3">Category groups to include</h5>
+      <div class="row">
+        <div
+          class="col-sm-6 col-md-4"
+          *ngFor="let g of groupOptions"
+        >
+          <div class="form-check">
+            <input
+              type="checkbox"
+              class="form-check-input"
+              [id]="'household-group-' + g.id"
+              [(ngModel)]="g.selected"
+              (change)="onGroupToggle()"
+            />
+            <label class="form-check-label" [for]="'household-group-' + g.id">
+              {{ g.name }}
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4">
+    <div class="card-body">
+      <h5 class="card-title mb-3">Spending by owner</h5>
+      <div *ngIf="!hasResults()" class="text-muted small">
+        Select at least one category group above to see the breakdown.
+      </div>
+      <div class="table-responsive" *ngIf="hasResults()">
+        <table class="table table-sm align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Category Group</th>
+              <th *ngFor="let code of ownerCodes" class="text-end">
+                {{ ownerNames[code] || code }}
+              </th>
+              <th class="text-end">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of results">
+              <td>{{ row.groupName }}</td>
+              <td *ngFor="let code of ownerCodes" class="text-end">
+                <ng-container *ngIf="getOwnerSpend(row, code) as o; else dash">
+                  {{ o.percent | number: '1.0-1' }}%
+                  <span class="text-muted small">({{ o.amount | currency }})</span>
+                </ng-container>
+                <ng-template #dash><span class="text-muted">—</span></ng-template>
+              </td>
+              <td class="text-end">{{ row.total | currency }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
