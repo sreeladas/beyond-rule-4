@@ -122,4 +122,14 @@ export class FireDashboardComponent implements OnInit, OnChanges {
     if (!this.calculateInput || !target || target <= 0) return 0;
     return Math.min(100, (this.calculateInput.netWorth / target) * 100);
   }
+
+  get minMonthlyContribution(): number | null {
+    if (!this.calculateInput || this.calculateInput.currentAge === 0) return null;
+    const r = this.calculateInput.expectedAnnualGrowthRate / 12;
+    const n = (this.calculateInput.retirementAge - this.calculateInput.currentAge) * 12;
+    if (n <= 0) return null;
+    const fvCurrent = this.calculateInput.netWorth * Math.pow(1 + r, n);
+    if (fvCurrent >= this.calculateInput.fiNumber) return 0;
+    return (this.calculateInput.fiNumber - fvCurrent) * r / (Math.pow(1 + r, n) - 1);
+  }
 }

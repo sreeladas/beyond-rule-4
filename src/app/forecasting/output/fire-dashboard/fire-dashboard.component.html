@@ -43,6 +43,39 @@
     </div>
   </div>
 
+  <!-- Minimum Monthly Contribution -->
+  <div class="mb-4" *ngIf="minMonthlyContribution !== null">
+    <h4 class="fw-light mb-3">
+      <span
+        ngbTooltip="The minimum monthly contribution needed so that your portfolio grows to your FIRE Number by your target retirement age of {{ calculateInput.retirementAge }}, assuming a {{ (calculateInput.expectedAnnualGrowthRate * 100).toFixed(1) }}% annual growth rate."
+        placement="top"
+        triggers="click:blur hover"
+        container="body"
+      >Minimum Monthly Contribution to FIRE <i class="fas fa-info-circle small"></i></span>
+    </h4>
+    <div class="row">
+      <div class="col-md-3 mb-3">
+        <div *ngIf="minMonthlyContribution === 0; else showContribution">
+          <div class="text-muted small">Required Contribution</div>
+          <div class="h4 mb-0 text-success">Already coasting!</div>
+          <div class="small text-muted">Your portfolio will reach your FIRE Number without further contributions.</div>
+        </div>
+        <ng-template #showContribution>
+          <div class="text-muted small">Required Contribution</div>
+          <div class="h4 mb-0">{{ formatCurrency(minMonthlyContribution) }}/mo</div>
+          <div class="small text-muted">
+            <span *ngIf="calculateInput.monthlyContribution >= minMonthlyContribution; else behindPace" class="text-success">
+              On track — contributing {{ formatCurrency(calculateInput.monthlyContribution) }}/mo
+            </span>
+            <ng-template #behindPace>
+              <span class="text-warning">Currently contributing {{ formatCurrency(calculateInput.monthlyContribution) }}/mo</span>
+            </ng-template>
+          </div>
+        </ng-template>
+      </div>
+    </div>
+  </div>
+
   <!-- Coast FIRE Scenarios -->
   <div class="mb-4">
     <h4 class="fw-light mb-3">
