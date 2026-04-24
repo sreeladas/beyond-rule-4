@@ -88,14 +88,17 @@ export class ChartComponent implements OnInit, AfterContentInit, OnChanges {
   @HostListener('window:resize', ['$event'])
   onResize(event) {
     this.setViewDimensions();
+    this.scheduleDrawAdjustmentMarkers();
   }
 
   ngAfterContentInit() {
     this.setViewDimensions();
+    this.scheduleDrawAdjustmentMarkers();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
     this.calculateData();
+    this.scheduleDrawAdjustmentMarkers();
   }
 
   onSelect($event) {}
@@ -123,6 +126,103 @@ export class ChartComponent implements OnInit, AfterContentInit, OnChanges {
     this.colorScheme.domain = this.filteredData.map((series) =>
       this.getSeriesColor(series.name)
     );
+    this.scheduleDrawAdjustmentMarkers();
+  }
+
+  private scheduleDrawAdjustmentMarkers() {
+    // ngx-charts renders async; defer until the SVG is in place.
+    setTimeout(() => this.drawAdjustmentMarkers(), 50);
+  }
+
+  private drawAdjustmentMarkers() {
+    if (!this.elementView?.nativeElement) return;
+    const root: HTMLElement = this.elementView.nativeElement;
+    const svg = root.querySelector(
+      'ngx-charts-line-chart svg'
+    ) as SVGSVGElement | null;
+    if (!svg) return;
+
+    const existing = svg.querySelector('g.adjustment-markers');
+    if (existing) existing.parentNode?.removeChild(existing);
+
+    const adjustments = this.calculateInput?.contributionAdjustments;
+    if (!adjustments?.length) return;
+    const forecasts = this.forecast?.monthlyForecasts;
+    if (!forecasts?.length) return;
+
+    const xAxisDomain = svg.querySelector(
+      '.x.axis .domain, g.x.axis path.domain'
+    ) as SVGGraphicsElement | null;
+    const yAxisDomain = svg.querySelector(
+      '.y.axis .domain, g.y.axis path.domain'
+    ) as SVGGraphicsElement | null;
+    if (!xAxisDomain || !yAxisDomain) return;
+
+    const chartWidth = xAxisDomain.getBBox().width;
+    const chartHeight = yAxisDomain.getBBox().height;
+    if (chartWidth <= 0 || chartHeight <= 0) return;
+
+    const xAxisGroup = xAxisDomain.parentNode as SVGGElement;
+    const plotGroup = xAxisGroup.parentNode as SVGGElement;
+    if (!plotGroup) return;
+
+    const firstDate = forecasts[0].date.getTime();
+    const lastDate = forecasts[forecasts.length - 1].date.getTime();
+    const dateRange = lastDate - firstDate;
+    if (dateRange <= 0) return;
+
+    const fiNumber = this.calculateInput?.fiNumber || 0;
+
+    const overlay = d3
+      .select(plotGroup)
+      .append('g')
+      .attr('class', 'adjustment-markers')
+      .attr('pointer-events', 'none');
+
+    adjustments.forEach((adj, idx) => {
+      const startDate = new Date(adj.startDate);
+      const t = startDate.getTime();
+      if (isNaN(t) || t < firstDate || t > lastDate) return;
+
+      const x = ((t - firstDate) / dateRange) * chartWidth;
+
+      const match = forecasts.find(
+        (f) =>
+          f.date.getFullYear() === startDate.getFullYear() &&
+          f.date.getMonth() === startDate.getMonth()
+      );
+      const pctLabel =
+        match && fiNumber > 0
+          ? `${Math.round((match.netWorth / fiNumber) * 100)}% of FIRE`
+          : '';
+
+      const dateLabel = startDate.toLocaleString(this.locale, {
+        month: 'short',
+        year: 'numeric',
+      });
+      const label = [adj.name, dateLabel, pctLabel]
+        .filter(Boolean)
+        .join(' • ');
+
+      overlay
+        .append('line')
+        .attr('x1', x)
+        .attr('x2', x)
+        .attr('y1', 0)
+        .attr('y2', chartHeight)
+        .attr('stroke', 'hsl(210, 20%, 50%)')
+        .attr('stroke-width', 1)
+        .attr('stroke-dasharray', '4,3')
+        .attr('opacity', 0.7);
+
+      overlay
+        .append('text')
+        .attr('x', x + 4)
+        .attr('y', 12 + (idx % 2) * 14)
+        .attr('font-size', '11px')
+        .attr('fill', 'hsl(210, 20%, 35%)')
+        .text(label);
+    });
   }
 
   isSeriesHidden(seriesName: string): boolean {
@@ -167,6 +267,11 @@ export class ChartComponent implements OnInit, AfterContentInit, OnChanges {
     result += ': ';
     if (tooltipItem.value !== undefined) {
       result += this.formatCurrency(tooltipItem.value);
+      const fiNumber = this.calculateInput?.fiNumber;
+      if (fiNumber && fiNumber > 0) {
+        const pct = Math.round((tooltipItem.value / fiNumber) * 100);
+        result += ` (${pct}% of FIRE)`;
+      }
     }
     return result;
   }
