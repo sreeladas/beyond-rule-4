@@ -17,8 +17,6 @@ import { Forecast } from '../../../models/forecast.model';
 import { Milestones } from '../milestone.model';
 import { CalculateInput } from '../../../models/calculate-input.model';
 
-declare let d3: any;
-
 @Component({
   selector: 'app-milestones-chart',
   templateUrl: './chart.component.html',
@@ -131,7 +129,9 @@ export class ChartComponent implements OnInit, AfterContentInit, OnChanges {
 
   private scheduleDrawAdjustmentMarkers() {
     // ngx-charts renders async; defer until the SVG is in place.
-    setTimeout(() => this.drawAdjustmentMarkers(), 50);
+    // Double-fire: first attempt in case it's fast, second as backup.
+    setTimeout(() => this.drawAdjustmentMarkers(), 100);
+    setTimeout(() => this.drawAdjustmentMarkers(), 500);
   }
 
   private drawAdjustmentMarkers() {
@@ -151,10 +151,10 @@ export class ChartComponent implements OnInit, AfterContentInit, OnChanges {
     if (!forecasts?.length) return;
 
     const xAxisDomain = svg.querySelector(
-      '.x.axis .domain, g.x.axis path.domain'
+      'g.x.axis path.domain'
     ) as SVGGraphicsElement | null;
     const yAxisDomain = svg.querySelector(
-      '.y.axis .domain, g.y.axis path.domain'
+      'g.y.axis path.domain'
     ) as SVGGraphicsElement | null;
     if (!xAxisDomain || !yAxisDomain) return;
 
@@ -162,8 +162,7 @@ export class ChartComponent implements OnInit, AfterContentInit, OnChanges {
     const chartHeight = yAxisDomain.getBBox().height;
     if (chartWidth <= 0 || chartHeight <= 0) return;
 
-    const xAxisGroup = xAxisDomain.parentNode as SVGGElement;
-    const plotGroup = xAxisGroup.parentNode as SVGGElement;
+    const plotGroup = xAxisDomain.parentNode?.parentNode as SVGGElement | null;
     if (!plotGroup) return;
 
     const firstDate = forecasts[0].date.getTime();
@@ -172,12 +171,11 @@ export class ChartComponent implements OnInit, AfterContentInit, OnChanges {
     if (dateRange <= 0) return;
 
     const fiNumber = this.calculateInput?.fiNumber || 0;
-
-    const overlay = d3
-      .select(plotGroup)
-      .append('g')
-      .attr('class', 'adjustment-markers')
-      .attr('pointer-events', 'none');
+    const NS = 'http://www.w3.org/2000/svg';
+    const overlay = document.createElementNS(NS, 'g');
+    overlay.setAttribute('class', 'adjustment-markers');
+    overlay.setAttribute('pointer-events', 'none');
+    plotGroup.appendChild(overlay);
 
     adjustments.forEach((adj, idx) => {
       const startDate = new Date(adj.startDate);
@@ -204,24 +202,24 @@ export class ChartComponent implements OnInit, AfterContentInit, OnChanges {
         .filter(Boolean)
         .join(' • ');
 
-      overlay
-        .append('line')
-        .attr('x1', x)
-        .attr('x2', x)
-        .attr('y1', 0)
-        .attr('y2', chartHeight)
-        .attr('stroke', 'hsl(210, 20%, 50%)')
-        .attr('stroke-width', 1)
-        .attr('stroke-dasharray', '4,3')
-        .attr('opacity', 0.7);
+      const line = document.createElementNS(NS, 'line');
+      line.setAttribute('x1', `${x}`);
+      line.setAttribute('x2', `${x}`);
+      line.setAttribute('y1', '0');
+      line.setAttribute('y2', `${chartHeight}`);
+      line.setAttribute('stroke', 'hsl(210, 20%, 50%)');
+      line.setAttribute('stroke-width', '1');
+      line.setAttribute('stroke-dasharray', '4,3');
+      line.setAttribute('opacity', '0.7');
+      overlay.appendChild(line);
 
-      overlay
-        .append('text')
-        .attr('x', x + 4)
-        .attr('y', 12 + (idx % 2) * 14)
-        .attr('font-size', '11px')
-        .attr('fill', 'hsl(210, 20%, 35%)')
-        .text(label);
+      const text = document.createElementNS(NS, 'text');
+      text.setAttribute('x', `${x + 4}`);
+      text.setAttribute('y', `${12 + (idx % 2) * 14}`);
+      text.setAttribute('font-size', '11px');
+      text.setAttribute('fill', 'hsl(210, 20%, 35%)');
+      text.textContent = label;
+      overlay.appendChild(text);
     });
   }
 
