@@ -21,13 +21,13 @@ export class HouseholdSplitService {
       budget.accounts
     );
 
-    const categoryToGroupId = new Map<string, string>();
     const groupNameById = new Map<string, string>();
     for (const g of budget.category_groups ?? []) {
       groupNameById.set(g.id, g.name);
-      for (const c of g.categories ?? []) {
-        categoryToGroupId.set(c.id, g.id);
-      }
+    }
+    const categoryToGroupId = new Map<string, string>();
+    for (const c of budget.categories ?? []) {
+      categoryToGroupId.set(c.id, c.category_group_id);
     }
 
     const selectedSet = new Set(selectedGroupIds);
