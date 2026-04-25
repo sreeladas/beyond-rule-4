@@ -92,23 +92,28 @@
               {{ accountSummary() }}
             </button>
             <div ngbDropdownMenu class="w-100" style="max-height: 300px; overflow-y: auto;">
-              <div class="px-3 py-1" *ngFor="let a of accountOptions">
-                <div class="form-check m-0">
-                  <input
-                    type="checkbox"
-                    class="form-check-input"
-                    [id]="'household-account-' + a.id"
-                    [checked]="isAccountSelected(a.id)"
-                    (change)="toggleAccount(a.id)"
-                  />
-                  <label
-                    class="form-check-label"
-                    [for]="'household-account-' + a.id"
-                  >
-                    {{ a.name }}
-                  </label>
+              <ng-container *ngFor="let group of accountGroups">
+                <div class="px-3 pt-2 pb-1 small text-muted text-uppercase">
+                  {{ group.typeLabel }}
                 </div>
-              </div>
+                <div class="px-3 py-1" *ngFor="let a of group.accounts">
+                  <div class="form-check m-0">
+                    <input
+                      type="checkbox"
+                      class="form-check-input"
+                      [id]="'household-account-' + a.id"
+                      [checked]="isAccountSelected(a.id)"
+                      (change)="toggleAccount(a.id)"
+                    />
+                    <label
+                      class="form-check-label"
+                      [for]="'household-account-' + a.id"
+                    >
+                      {{ a.name }}
+                    </label>
+                  </div>
+                </div>
+              </ng-container>
             </div>
           </div>
         </div>

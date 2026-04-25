@@ -28,6 +28,17 @@ interface PickerOption {
   name: string;
 }
 
+interface AccountGroup {
+  typeLabel: string;
+  accounts: PickerOption[];
+}
+
+function formatAccountType(type: string): string {
+  if (!type) return 'Other';
+  const spaced = type.replace(/([A-Z])/g, ' $1').trim();
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+}
+
 @Component({
   selector: 'app-household-split',
   templateUrl: 'household-split.component.html',
@@ -44,7 +55,8 @@ export class HouseholdSplitComponent implements OnInit {
   groupOptions: PickerOption[] = [];
   selectedGroupIds: string[] = [];
 
-  accountOptions: PickerOption[] = [];
+  accountGroups: AccountGroup[] = [];
+  totalAccountCount = 0;
   selectedAccountIds: string[] = [];
 
   monthOptions: MonthOption[] = [];
@@ -153,12 +165,23 @@ export class HouseholdSplitComponent implements OnInit {
 
   accountSummary(): string {
     if (
-      this.accountOptions.length > 0 &&
-      this.selectedAccountIds.length === this.accountOptions.length
+      this.totalAccountCount > 0 &&
+      this.selectedAccountIds.length === this.totalAccountCount
     ) {
       return 'All accounts';
     }
-    return this.summarize(this.selectedAccountIds, this.accountOptions, 'accounts');
+    if (!this.selectedAccountIds.length) return 'Select accounts';
+    if (this.selectedAccountIds.length <= 3) {
+      const names = this.flatAccountOptions()
+        .filter((a) => this.selectedAccountIds.includes(a.id))
+        .map((a) => a.name);
+      return names.join(', ');
+    }
+    return `${this.selectedAccountIds.length} of ${this.totalAccountCount} selected`;
+  }
+
+  private flatAccountOptions(): PickerOption[] {
+    return this.accountGroups.flatMap((g) => g.accounts);
   }
 
   getOwnerSpend(row: GroupSplit, ownerCode: string): OwnerSpend | undefined {
@@ -197,7 +220,8 @@ export class HouseholdSplitComponent implements OnInit {
     if (!this.budget) {
       this.ownerOptions = [];
       this.groupOptions = [];
-      this.accountOptions = [];
+      this.accountGroups = [];
+      this.totalAccountCount = 0;
       this.results = [];
       return;
     }
@@ -223,11 +247,14 @@ export class HouseholdSplitComponent implements OnInit {
       validGroupIds.has(id)
     );
 
-    this.accountOptions = (this.budget.accounts ?? [])
-      .filter((a) => !a.closed && !a.deleted)
-      .map((a) => ({ id: a.id, name: a.name }))
-      .sort((a, b) => a.name.localeCompare(b.name));
-    const validAccountIds = new Set(this.accountOptions.map((a) => a.id));
+    this.accountGroups = this.buildAccountGroups(this.budget.accounts);
+    this.totalAccountCount = this.accountGroups.reduce(
+      (sum, g) => sum + g.accounts.length,
+      0
+    );
+    const validAccountIds = new Set(
+      this.flatAccountOptions().map((a) => a.id)
+    );
     const filteredStoredAccounts = this.selectedAccountIds.filter((id) =>
       validAccountIds.has(id)
     );
@@ -235,7 +262,7 @@ export class HouseholdSplitComponent implements OnInit {
       this.selectedAccountIds.length === 0 ||
       filteredStoredAccounts.length === 0
     ) {
-      this.selectedAccountIds = this.accountOptions.map((a) => a.id);
+      this.selectedAccountIds = this.flatAccountOptions().map((a) => a.id);
       window.localStorage.setItem(
         STORAGE_SELECTED_ACCOUNTS,
         JSON.stringify(this.selectedAccountIds)
@@ -245,6 +272,23 @@ export class HouseholdSplitComponent implements OnInit {
     }
 
     this.recompute();
+  }
+
+  private buildAccountGroups(accounts: ynab.Account[]): AccountGroup[] {
+    const byType = new Map<string, PickerOption[]>();
+    for (const a of accounts ?? []) {
+      if (a.closed || a.deleted) continue;
+      const list = byType.get(a.type) ?? [];
+      list.push({ id: a.id, name: a.name });
+      byType.set(a.type, list);
+    }
+    const groups: AccountGroup[] = [];
+    for (const [type, list] of byType) {
+      list.sort((a, b) => a.name.localeCompare(b.name));
+      groups.push({ typeLabel: formatAccountType(type), accounts: list });
+    }
+    groups.sort((a, b) => a.typeLabel.localeCompare(b.typeLabel));
+    return groups;
   }
 
   private buildMonthOptions(): MonthOption[] {
