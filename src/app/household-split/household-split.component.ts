@@ -181,7 +181,10 @@ export class HouseholdSplitComponent implements OnInit {
   }
 
   private flatAccountOptions(): PickerOption[] {
-    return this.accountGroups.flatMap((g) => g.accounts);
+    return this.accountGroups.reduce<PickerOption[]>(
+      (acc, g) => acc.concat(g.accounts),
+      []
+    );
   }
 
   getOwnerSpend(row: GroupSplit, ownerCode: string): OwnerSpend | undefined {
