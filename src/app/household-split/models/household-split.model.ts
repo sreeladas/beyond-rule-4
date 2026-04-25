@@ -9,4 +9,5 @@ export interface GroupSplit {
   groupName: string;
   total: number;
   byOwner: OwnerSpend[];
+  isOverall?: boolean;
 }

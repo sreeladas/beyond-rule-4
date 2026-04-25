@@ -5,6 +5,7 @@ import { OwnerService } from './owner.service';
 import { GroupSplit, OwnerSpend } from '../models/household-split.model';
 
 const NULL_GROUP_NAME = 'Uncategorized / Split';
+const OVERALL_GROUP_NAME = 'Overall';
 const UNKNOWN_OWNER = 'Unknown';
 const NULL_KEY = '__null__';
 
@@ -21,12 +22,14 @@ export class HouseholdSplitService {
     budget: ynab.BudgetDetail,
     selectedGroupIds: string[],
     selectedOwnerCodes: string[],
+    selectedAccountIds: string[],
     range: DateRange
   ): GroupSplit[] {
     const accountToOwner = this.ownerService.buildAccountOwnerMap(
       budget.accounts
     );
     const ownerSet = new Set(selectedOwnerCodes);
+    const accountSet = new Set(selectedAccountIds);
 
     const groupNameById = new Map<string, string>();
     for (const g of budget.category_groups ?? []) {
@@ -50,6 +53,7 @@ export class HouseholdSplitService {
       if (t.transfer_account_id) continue;
       if (t.payee_id && transferPayeeIds.has(t.payee_id)) continue;
       if (t.amount >= 0) continue;
+      if (!accountSet.has(t.account_id)) continue;
       const txDate = new Date(t.date);
       if (txDate < range.since || txDate >= range.until) continue;
 
@@ -86,6 +90,7 @@ export class HouseholdSplitService {
     result.push(
       this.toGroupSplit(null, NULL_GROUP_NAME, buckets.get(NULL_KEY) ?? new Map())
     );
+    result.push(this.computeOverall(result, selectedOwnerCodes));
     return result;
   }
 
@@ -109,6 +114,36 @@ export class HouseholdSplitService {
       groupName,
       total: ynab.utils.convertMilliUnitsToCurrencyAmount(totalMilli),
       byOwner,
+    };
+  }
+
+  private computeOverall(
+    rows: GroupSplit[],
+    selectedOwnerCodes: string[]
+  ): GroupSplit {
+    const sums = new Map<string, number>();
+    let total = 0;
+    for (const row of rows) {
+      if (row.groupId === null) continue;
+      for (const o of row.byOwner) {
+        sums.set(o.ownerCode, (sums.get(o.ownerCode) ?? 0) + o.amount);
+        total += o.amount;
+      }
+    }
+    const byOwner: OwnerSpend[] = selectedOwnerCodes.map((code) => {
+      const amount = sums.get(code) ?? 0;
+      return {
+        ownerCode: code,
+        amount,
+        percent: total === 0 ? 0 : (amount / total) * 100,
+      };
+    });
+    return {
+      groupId: '__overall__',
+      groupName: OVERALL_GROUP_NAME,
+      total,
+      byOwner,
+      isOverall: true,
     };
   }
 }

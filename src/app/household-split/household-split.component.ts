@@ -11,6 +11,7 @@ import { GroupSplit, OwnerSpend } from './models/household-split.model';
 
 const STORAGE_BUDGET_ID = 'ff-selected-budget';
 const STORAGE_SELECTED_GROUPS = 'ff-household-split.selected-groups';
+const STORAGE_SELECTED_ACCOUNTS = 'ff-household-split.selected-accounts';
 const STORAGE_FROM_MONTH = 'ff-household-split.from-month';
 const STORAGE_TO_MONTH = 'ff-household-split.to-month';
 
@@ -43,6 +44,9 @@ export class HouseholdSplitComponent implements OnInit {
   groupOptions: PickerOption[] = [];
   selectedGroupIds: string[] = [];
 
+  accountOptions: PickerOption[] = [];
+  selectedAccountIds: string[] = [];
+
   monthOptions: MonthOption[] = [];
   fromMonth = '';
   toMonth = '';
@@ -60,7 +64,8 @@ export class HouseholdSplitComponent implements OnInit {
   async ngOnInit() {
     this.isUsingSampleData = this.ynabApi.isUsingSampleData();
     this.selectedOwnerCodes = this.ownerService.loadSelectedOwnerCodes();
-    this.selectedGroupIds = this.loadSelectedGroupIds();
+    this.selectedGroupIds = this.loadIdList(STORAGE_SELECTED_GROUPS);
+    this.selectedAccountIds = this.loadIdList(STORAGE_SELECTED_ACCOUNTS);
 
     this.monthOptions = this.buildMonthOptions();
     const storedFrom = window.localStorage.getItem(STORAGE_FROM_MONTH);
@@ -106,18 +111,21 @@ export class HouseholdSplitComponent implements OnInit {
   }
 
   toggleGroup(id: string) {
-    const i = this.selectedGroupIds.indexOf(id);
-    if (i >= 0) this.selectedGroupIds.splice(i, 1);
-    else this.selectedGroupIds.push(id);
-    window.localStorage.setItem(
-      STORAGE_SELECTED_GROUPS,
-      JSON.stringify(this.selectedGroupIds)
-    );
+    this.toggleId(this.selectedGroupIds, id, STORAGE_SELECTED_GROUPS);
     this.recompute();
   }
 
   isGroupSelected(id: string): boolean {
     return this.selectedGroupIds.includes(id);
+  }
+
+  toggleAccount(id: string) {
+    this.toggleId(this.selectedAccountIds, id, STORAGE_SELECTED_ACCOUNTS);
+    this.recompute();
+  }
+
+  isAccountSelected(id: string): boolean {
+    return this.selectedAccountIds.includes(id);
   }
 
   onFromMonthChange(value: string) {
@@ -140,12 +148,17 @@ export class HouseholdSplitComponent implements OnInit {
   }
 
   groupSummary(): string {
-    if (!this.selectedGroupIds.length) return 'Select category groups';
-    const names = this.groupOptions
-      .filter((g) => this.selectedGroupIds.includes(g.id))
-      .map((g) => g.name);
-    if (names.length <= 3) return names.join(', ');
-    return `${names.length} selected`;
+    return this.summarize(this.selectedGroupIds, this.groupOptions, 'category groups');
+  }
+
+  accountSummary(): string {
+    if (
+      this.accountOptions.length > 0 &&
+      this.selectedAccountIds.length === this.accountOptions.length
+    ) {
+      return 'All accounts';
+    }
+    return this.summarize(this.selectedAccountIds, this.accountOptions, 'accounts');
   }
 
   getOwnerSpend(row: GroupSplit, ownerCode: string): OwnerSpend | undefined {
@@ -159,11 +172,32 @@ export class HouseholdSplitComponent implements OnInit {
     );
   }
 
+  private summarize(
+    selected: string[],
+    options: PickerOption[],
+    noun: string
+  ): string {
+    if (!selected.length) return `Select ${noun}`;
+    const names = options
+      .filter((o) => selected.includes(o.id))
+      .map((o) => o.name);
+    if (names.length <= 3) return names.join(', ');
+    return `${names.length} selected`;
+  }
+
+  private toggleId(list: string[], id: string, storageKey: string) {
+    const i = list.indexOf(id);
+    if (i >= 0) list.splice(i, 1);
+    else list.push(id);
+    window.localStorage.setItem(storageKey, JSON.stringify(list));
+  }
+
   private async loadBudget() {
     this.budget = await this.ynabApi.getBudgetById(this.selectedBudgetId);
     if (!this.budget) {
       this.ownerOptions = [];
       this.groupOptions = [];
+      this.accountOptions = [];
       this.results = [];
       return;
     }
@@ -189,6 +223,27 @@ export class HouseholdSplitComponent implements OnInit {
       validGroupIds.has(id)
     );
 
+    this.accountOptions = (this.budget.accounts ?? [])
+      .filter((a) => !a.closed && !a.deleted)
+      .map((a) => ({ id: a.id, name: a.name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+    const validAccountIds = new Set(this.accountOptions.map((a) => a.id));
+    const filteredStoredAccounts = this.selectedAccountIds.filter((id) =>
+      validAccountIds.has(id)
+    );
+    if (
+      this.selectedAccountIds.length === 0 ||
+      filteredStoredAccounts.length === 0
+    ) {
+      this.selectedAccountIds = this.accountOptions.map((a) => a.id);
+      window.localStorage.setItem(
+        STORAGE_SELECTED_ACCOUNTS,
+        JSON.stringify(this.selectedAccountIds)
+      );
+    } else {
+      this.selectedAccountIds = filteredStoredAccounts;
+    }
+
     this.recompute();
   }
 
@@ -210,13 +265,9 @@ export class HouseholdSplitComponent implements OnInit {
   }
 
   private normalizeMonthRange() {
-    if (this.compareMonth(this.fromMonth, this.toMonth) > 0) {
+    if (this.fromMonth.localeCompare(this.toMonth) > 0) {
       this.toMonth = this.fromMonth;
     }
-  }
-
-  private compareMonth(a: string, b: string): number {
-    return a.localeCompare(b);
   }
 
   private persistMonthRange() {
@@ -233,9 +284,9 @@ export class HouseholdSplitComponent implements OnInit {
     };
   }
 
-  private loadSelectedGroupIds(): string[] {
+  private loadIdList(key: string): string[] {
     try {
-      const raw = window.localStorage.getItem(STORAGE_SELECTED_GROUPS);
+      const raw = window.localStorage.getItem(key);
       return raw ? JSON.parse(raw) : [];
     } catch {
       return [];
@@ -251,6 +302,7 @@ export class HouseholdSplitComponent implements OnInit {
       this.budget,
       this.selectedGroupIds,
       this.selectedOwnerCodes,
+      this.selectedAccountIds,
       this.currentRange()
     );
   }

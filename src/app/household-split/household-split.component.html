@@ -45,8 +45,8 @@
       </div>
 
       <div class="row g-3 mt-1">
-        <div class="col-sm-12 col-md-6">
-          <label class="form-label small">Owner accounts</label>
+        <div class="col-sm-12 col-md-4">
+          <label class="form-label small">Owners</label>
           <div ngbDropdown [autoClose]="'outside'">
             <button
               type="button"
@@ -57,10 +57,7 @@
               {{ ownerSummary() }}
             </button>
             <div ngbDropdownMenu class="w-100">
-              <div
-                class="px-3 py-1"
-                *ngFor="let code of ownerOptions"
-              >
+              <div class="px-3 py-1" *ngFor="let code of ownerOptions">
                 <div class="form-check m-0">
                   <input
                     type="checkbox"
@@ -83,7 +80,39 @@
             </div>
           </div>
         </div>
-        <div class="col-sm-12 col-md-6">
+        <div class="col-sm-12 col-md-4">
+          <label class="form-label small">Accounts</label>
+          <div ngbDropdown [autoClose]="'outside'">
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-secondary w-100 text-start"
+              ngbDropdownToggle
+              [disabled]="!accountOptions.length"
+            >
+              {{ accountSummary() }}
+            </button>
+            <div ngbDropdownMenu class="w-100" style="max-height: 300px; overflow-y: auto;">
+              <div class="px-3 py-1" *ngFor="let a of accountOptions">
+                <div class="form-check m-0">
+                  <input
+                    type="checkbox"
+                    class="form-check-input"
+                    [id]="'household-account-' + a.id"
+                    [checked]="isAccountSelected(a.id)"
+                    (change)="toggleAccount(a.id)"
+                  />
+                  <label
+                    class="form-check-label"
+                    [for]="'household-account-' + a.id"
+                  >
+                    {{ a.name }}
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-sm-12 col-md-4">
           <label class="form-label small">Category groups</label>
           <div ngbDropdown [autoClose]="'outside'">
             <button
@@ -94,11 +123,8 @@
             >
               {{ groupSummary() }}
             </button>
-            <div ngbDropdownMenu class="w-100">
-              <div
-                class="px-3 py-1"
-                *ngFor="let g of groupOptions"
-              >
+            <div ngbDropdownMenu class="w-100" style="max-height: 300px; overflow-y: auto;">
+              <div class="px-3 py-1" *ngFor="let g of groupOptions">
                 <div class="form-check m-0">
                   <input
                     type="checkbox"
@@ -140,12 +166,19 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let row of results">
+            <tr
+              *ngFor="let row of results"
+              [class.fw-bold]="row.isOverall"
+              [class.border-top]="row.isOverall"
+            >
               <td>{{ row.groupName }}</td>
               <td *ngFor="let code of selectedOwnerCodes" class="text-end">
                 <ng-container *ngIf="getOwnerSpend(row, code) as o; else dash">
                   {{ o.percent | number: '1.0-1' }}%
-                  <span class="text-muted small">({{ o.amount | currency }})</span>
+                  <span
+                    class="small"
+                    [class.text-muted]="!row.isOverall"
+                  >({{ o.amount | currency }})</span>
                 </ng-container>
                 <ng-template #dash><span class="text-muted">—</span></ng-template>
               </td>
