@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import * as ynab from 'ynab';
 
-const STORAGE_OWNER_NAMES = 'ff-household-split.owner-names';
+const STORAGE_SELECTED_OWNERS = 'ff-household-split.selected-owners';
 const UNKNOWN_OWNER = 'Unknown';
 
 @Injectable({ providedIn: 'root' })
@@ -28,16 +28,19 @@ export class OwnerService {
     return [...codes].sort();
   }
 
-  loadDisplayNames(): Record<string, string> {
+  loadSelectedOwnerCodes(): string[] {
     try {
-      const raw = window.localStorage.getItem(STORAGE_OWNER_NAMES);
-      return raw ? JSON.parse(raw) : {};
+      const raw = window.localStorage.getItem(STORAGE_SELECTED_OWNERS);
+      return raw ? JSON.parse(raw) : [];
     } catch {
-      return {};
+      return [];
     }
   }
 
-  saveDisplayNames(names: Record<string, string>): void {
-    window.localStorage.setItem(STORAGE_OWNER_NAMES, JSON.stringify(names));
+  saveSelectedOwnerCodes(codes: string[]): void {
+    window.localStorage.setItem(
+      STORAGE_SELECTED_OWNERS,
+      JSON.stringify(codes)
+    );
   }
 }

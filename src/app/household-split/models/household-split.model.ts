@@ -1,6 +1,5 @@
 export interface OwnerSpend {
   ownerCode: string;
-  displayName: string;
   amount: number;
   percent: number;
 }
