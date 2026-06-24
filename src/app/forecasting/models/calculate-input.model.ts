@@ -9,6 +9,10 @@ export class CalculateInput {
   annualSafeWithdrawalRate = 0;
   expectedAnnualGrowthRate = 0;
   monthlyContribution = 0;
+  inflationRate = 0;
+  contributionGrowthYear1 = 0;
+  contributionGrowthYear2 = 0;
+  contributionGrowthRate = 0;
   leanFiPercentage = 0;
   budgetCategoryGroups = [];
   currencyIsoCode = 'CAD';
@@ -39,6 +43,7 @@ export class CalculateInput {
         annualSafeWithdrawalRate: 0.04,
         leanFiPercentage: 0.7,
         expectedAnnualGrowthRate: 0.07,
+        inflationRate: 0.025,
       },
       init,
     );
@@ -51,6 +56,10 @@ export class CalculateInput {
     this.annualSafeWithdrawalRate = round(this.annualSafeWithdrawalRate, 4);
     this.expectedAnnualGrowthRate = round(this.expectedAnnualGrowthRate, 4);
     this.monthlyContribution = round(this.monthlyContribution);
+    this.inflationRate = round(this.inflationRate, 4);
+    this.contributionGrowthYear1 = round(this.contributionGrowthYear1, 4);
+    this.contributionGrowthYear2 = round(this.contributionGrowthYear2, 4);
+    this.contributionGrowthRate = round(this.contributionGrowthRate, 4);
     this.leanFiPercentage = round(this.leanFiPercentage);
     this.leanAnnualExpenses = round(this.leanAnnualExpenses);
     this.retirementAge = Math.round(this.retirementAge);
@@ -61,6 +70,31 @@ export class CalculateInput {
     this.taxDeferredRateMax = round(this.taxDeferredRateMax, 4);
     this.investmentIncomeRateMin = round(this.investmentIncomeRateMin, 4);
     this.investmentIncomeRateMax = round(this.investmentIncomeRateMax, 4);
+  }
+
+  // Cumulative NOMINAL growth applied to the base contribution at year `yearIndex`.
+  // Does not apply to dated contribution adjustments.
+  public contributionGrowthMultiplier(yearIndex: number): number {
+    if (yearIndex <= 0) {
+      return 1;
+    }
+    let multiplier = 1 + this.contributionGrowthYear1;
+    if (yearIndex >= 2) {
+      multiplier *= 1 + this.contributionGrowthYear2;
+    }
+    if (yearIndex >= 3) {
+      multiplier *= Math.pow(1 + this.contributionGrowthRate, yearIndex - 2);
+    }
+    return multiplier;
+  }
+
+  // Converts a nominal amount at year `yearIndex` into today's dollars.
+  // Applies to BOTH the base contribution and dated contribution adjustments.
+  public inflationDeflator(yearIndex: number): number {
+    if (yearIndex <= 0) {
+      return 1;
+    }
+    return 1 / Math.pow(1 + this.inflationRate, yearIndex);
   }
 
   get safeWithdrawalTimes() {

@@ -102,7 +102,15 @@ export class Forecast {
         calculateInput.contributionAdjustments,
         forecastDate
       );
-      const contribution = calculateInput.monthlyContribution + adjustment;
+      const yearIndex = Math.floor((month - 1) / 12);
+      const deflator = calculateInput.inflationDeflator(yearIndex);
+      const realBase = round(
+        calculateInput.monthlyContribution *
+          calculateInput.contributionGrowthMultiplier(yearIndex) *
+          deflator
+      );
+      const realAdjustment = round(adjustment * deflator);
+      const contribution = realBase + realAdjustment;
 
       const newNetWorth = round(
         ((currentNetWorth + contribution) * 100 * monthlyAverageGrowth) / 100

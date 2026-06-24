@@ -27,6 +27,10 @@ export class BasicInputComponent implements OnInit, OnChanges {
       annualSafeWithdrawalRate: [0, [Validators.required]],
       expectedAnnualGrowthRate: [0, [Validators.required]],
       monthlyContribution: [0, [Validators.required]],
+      inflationRate: [0, [Validators.required]],
+      contributionGrowthYear1: [0, [Validators.required]],
+      contributionGrowthYear2: [0, [Validators.required]],
+      contributionGrowthRate: [0, [Validators.required]],
       leanFiPercentage: [0, [Validators.required]],
     });
   }
@@ -60,6 +64,10 @@ export class BasicInputComponent implements OnInit, OnChanges {
     result.expectedAnnualGrowthRate /= 100;
     result.annualSafeWithdrawalRate /= 100;
     result.leanFiPercentage /= 100;
+    result.inflationRate /= 100;
+    result.contributionGrowthYear1 /= 100;
+    result.contributionGrowthYear2 /= 100;
+    result.contributionGrowthRate /= 100;
     result.roundAll();
     return result;
   }
@@ -69,6 +77,10 @@ export class BasicInputComponent implements OnInit, OnChanges {
     result.expectedAnnualGrowthRate *= 100;
     result.annualSafeWithdrawalRate *= 100;
     result.leanFiPercentage *= 100;
+    result.inflationRate *= 100;
+    result.contributionGrowthYear1 *= 100;
+    result.contributionGrowthYear2 *= 100;
+    result.contributionGrowthRate *= 100;
     result.roundAll();
     return result;
   }
