@@ -7,7 +7,7 @@ export interface WindfallAllocation {
   debt: number;
 }
 
-export interface ScenarioBuildResult {
+interface ScenarioBuildResult {
   input: CalculateInput;
   refund: number;
 }
@@ -21,7 +21,7 @@ export function emptyAllocation(): WindfallAllocation {
  * constructor (Object.assign) copies contributionAdjustments by reference, so
  * we deep-copy that array here to guarantee the baseline is never mutated.
  */
-export function cloneInput(base: CalculateInput): CalculateInput {
+function cloneInput(base: CalculateInput): CalculateInput {
   const clone = new CalculateInput(base);
   clone.contributionAdjustments = (base.contributionAdjustments || []).map(
     (a) => ({ ...a })
