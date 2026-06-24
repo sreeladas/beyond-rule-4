@@ -1,5 +1,5 @@
 import { MonthDetail } from 'ynab';
-export interface SelectedMonths {
+interface SelectedMonths {
   from: MonthDetail;
   to: MonthDetail;
 }
