@@ -70,7 +70,12 @@ function getSampleDataSteps(): TourStep[] {
       text:
         'Enter how much you invest each month.' +
         '<br/><br/>' +
-        'This has the biggest impact on your timeline, and even small increases move the date forward.',
+        'This has the biggest impact on your timeline, and even small increases move the date forward.' +
+        '<br/><br/>' +
+        'Planning to invest more over time? Set an <b>Ongoing Contribution Growth</b> rate to raise your ' +
+        'contribution by a set percent every year — the resulting Year 1 and Year 2 amounts appear right ' +
+        'below it. The <b>Inflation Rate</b> beside it flags whether that growth <b>beats</b>, <b>matches</b>, ' +
+        "or <b>trails</b> inflation; either way, results stay in today's dollars.",
     },
     {
       selector: '[data-tour="retirement-expenses"]',
@@ -133,7 +138,12 @@ function getYnabConnectedSteps(): TourStep[] {
         "Add <code>FF + amount</code> in an category's notes to include off-budget contributions like an employer match." +
         '<br/><br/>' +
         'Additionally use <code>FF +tax-free amount</code> or <code> FF +tax-deferred amount</code> (e.g. <code>FF +tax-free 240</code>) ' +
-        'to include contributions that are not reflected in your ynab plan, like an employer match to retirement contribution.',
+        'to include contributions that are not reflected in your ynab plan, like an employer match to retirement contribution.' +
+        '<br/><br/>' +
+        'Expecting to invest more over time? Set an <b>Ongoing Contribution Growth</b> rate to raise your ' +
+        'contribution by a set percent every year — the resulting Year 1 and Year 2 amounts appear right ' +
+        'below it. The <b>Inflation Rate</b> beside it flags whether that growth <b>beats</b>, <b>matches</b>, ' +
+        'or <b>trails</b> inflation.',
     },
     {
       selector: '[data-tour="retirement-expenses"]',

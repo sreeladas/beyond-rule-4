@@ -55,6 +55,8 @@ export class YnabComponent implements OnInit {
   public safeWithdrawalRatePercentage = 4.0;
   public expectedAnnualGrowthRate = 7.0;
   public retirementAge = 60;
+  public inflationRate = 2.5;
+  public contributionGrowthRate = 0;
 
   public budgets: ynab.BudgetSummary[];
   public budget: ynab.BudgetDetail;
@@ -158,6 +160,20 @@ export class YnabComponent implements OnInit {
       this.retirementAge = retirementAgeStorage;
     }
 
+    // Use isNaN (not truthiness) so a stored 0% is honored.
+    const inflationRateStorage = parseFloat(
+      window.localStorage.getItem('ff-inflation-rate'),
+    );
+    if (!isNaN(inflationRateStorage)) {
+      this.inflationRate = inflationRateStorage;
+    }
+    const contributionGrowthRateStorage = parseFloat(
+      window.localStorage.getItem('ff-contribution-growth-rate'),
+    );
+    if (!isNaN(contributionGrowthRateStorage)) {
+      this.contributionGrowthRate = contributionGrowthRateStorage;
+    }
+
     this.budgetForm = this.formBuilder.group({
       selectedBudget: ['', [Validators.required]],
       selectedMonthA: ['', [Validators.required]],
@@ -174,6 +190,14 @@ export class YnabComponent implements OnInit {
         this.expectedAnnualGrowthRate,
         [Validators.required, Validators.max(99.99), Validators.max(0.01)],
       ],
+      inflationRate: [
+        this.inflationRate,
+        [Validators.required, Validators.min(0), Validators.max(99.99)],
+      ],
+      contributionGrowthRate: [
+        this.contributionGrowthRate,
+        [Validators.required],
+      ],
       birthdate: [this.birthdate, [Validators.required]],
       retirementAge: [
         this.retirementAge,
@@ -188,6 +212,35 @@ export class YnabComponent implements OnInit {
 
   get accounts(): UntypedFormArray {
     return this.budgetForm.get('accounts') as UntypedFormArray;
+  }
+
+  // Projected monthly contribution after one year of ongoing nominal growth.
+  get contributionAfterYear1(): number {
+    const base = Number(this.budgetForm?.value?.monthlyContribution) || 0;
+    const growth = Number(this.budgetForm?.value?.contributionGrowthRate) || 0;
+    return base * (1 + growth / 100);
+  }
+
+  // Projected monthly contribution after two years of ongoing nominal growth.
+  get contributionAfterYear2(): number {
+    const base = Number(this.budgetForm?.value?.monthlyContribution) || 0;
+    const growth = Number(this.budgetForm?.value?.contributionGrowthRate) || 0;
+    return base * Math.pow(1 + growth / 100, 2);
+  }
+
+  // Whether the ongoing contribution growth beats, matches, or trails inflation.
+  // Drives the buying-power message under the growth input.
+  get contributionGrowthVsInflation(): 'outpaces' | 'matches' | 'trails' {
+    const growth = Number(this.budgetForm?.value?.contributionGrowthRate) || 0;
+    const inflation = Number(this.budgetForm?.value?.inflationRate) || 0;
+    const diff = growth - inflation;
+    if (diff > 0.001) {
+      return 'outpaces';
+    }
+    if (diff < -0.001) {
+      return 'trails';
+    }
+    return 'matches';
   }
 
   async ngOnInit() {
@@ -260,6 +313,8 @@ export class YnabComponent implements OnInit {
       0,
       this.expectedAnnualGrowthRate / 100,
     );
+    result.inflationRate = Math.max(0, this.inflationRate / 100);
+    result.contributionGrowthRate = this.contributionGrowthRate / 100;
 
     if (taxRatios) {
       result.taxFreeRatio = taxRatios.taxFreeRatio;
@@ -489,6 +544,26 @@ export class YnabComponent implements OnInit {
       window.localStorage.setItem(
         'ff-expect-annual-growth-rate',
         parsedExpectedAnnualGrowthRate.toString(),
+      );
+    }
+    const parsedInflationRate = Number.parseFloat(
+      this.budgetForm.value.inflationRate,
+    );
+    if (!Number.isNaN(parsedInflationRate)) {
+      this.inflationRate = parsedInflationRate;
+      window.localStorage.setItem(
+        'ff-inflation-rate',
+        parsedInflationRate.toString(),
+      );
+    }
+    const parsedContributionGrowthRate = Number.parseFloat(
+      this.budgetForm.value.contributionGrowthRate,
+    );
+    if (!Number.isNaN(parsedContributionGrowthRate)) {
+      this.contributionGrowthRate = parsedContributionGrowthRate;
+      window.localStorage.setItem(
+        'ff-contribution-growth-rate',
+        parsedContributionGrowthRate.toString(),
       );
     }
     const parsedRetirementAge = Number.parseFloat(
@@ -766,6 +841,8 @@ export class YnabComponent implements OnInit {
       includeHiddenYnabCategories: this.includeHiddenYnabCategories,
       monthlyContribution,
       expectedAnnualGrowthRate: this.expectedAnnualGrowthRate,
+      inflationRate: this.inflationRate,
+      contributionGrowthRate: this.contributionGrowthRate,
       safeWithdrawalRatePercentage: this.safeWithdrawalRatePercentage,
       birthdate: this.birthdate,
       retirementAge: this.retirementAge,
