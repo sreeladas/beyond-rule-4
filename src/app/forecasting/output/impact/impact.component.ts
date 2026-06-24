@@ -60,7 +60,9 @@ export class ImpactComponent implements OnInit, OnChanges {
             const modifiedForecast = new Forecast(modifiedCalcInput);
             const modifiedFiForecast = this.getFiForecast(modifiedForecast, modifiedCalcInput.fiNumber);
 
-            impactDate = this.getImpactDateText(currentFiForecast.date, modifiedFiForecast.date);
+            impactDate = modifiedFiForecast
+                ? this.getImpactDateText(currentFiForecast.date, modifiedFiForecast.date)
+                : '—';
 
             return {
                 category,
@@ -71,12 +73,16 @@ export class ImpactComponent implements OnInit, OnChanges {
     }
 
     private getModifiedCalculateInput(fiSpendingReductionPerMonth: number): CalculateInput {
-        const calcInput = new CalculateInput();
+        // Start from a full copy so the counterfactual matches the baseline on
+        // everything except the expense being cut: SWR, growth, net worth, lean
+        // expenses, contribution adjustments, etc. all carry over.
+        const calcInput = new CalculateInput(this.calculateInput);
         calcInput.annualExpenses = this.calculateInput.annualExpenses - fiSpendingReductionPerMonth * 12;
-        calcInput.annualSafeWithdrawalRate = this.calculateInput.annualSafeWithdrawalRate;
-        calcInput.expectedAnnualGrowthRate = this.calculateInput.expectedAnnualGrowthRate;
-        calcInput.netWorth = this.calculateInput.netWorth;
         calcInput.monthlyContribution = this.calculateInput.monthlyContribution + fiSpendingReductionPerMonth;
+        // Keep the baseline tax mix so the impact reflects ONLY the cut expense.
+        // (Flipping the whole portfolio to taxable shifts the FIRE number by a
+        // large amount common to every category, swamping the expense itself.)
+        calcInput.roundAll();
         return calcInput;
     }
 

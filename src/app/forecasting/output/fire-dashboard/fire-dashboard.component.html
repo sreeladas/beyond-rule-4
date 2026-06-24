@@ -1,176 +1,156 @@
 <div *ngIf="calculateInput">
-  <!-- FIRE Targets -->
-  <div class="mb-4">
-    <h4 class="fw-light mb-3">FIRE Numbers</h4>
-    <div class="row">
-      <div class="col-md-3 mb-3">
-        <div class="text-muted small">Annual Expenses</div>
-        <div class="h4 mb-0">
-          {{ formatCurrency(calculateInput.annualExpenses) }}
+  <!-- Overview metrics -->
+  <div class="row row-cols-2 row-cols-md-4 g-3 mb-4">
+    <div class="col">
+      <div class="metric-card card h-100">
+        <div class="card-body">
+          <div class="metric-label">Annual Expenses</div>
+          <div class="metric-value">
+            {{ formatCurrency(calculateInput.annualExpenses) }}
+          </div>
         </div>
       </div>
-      <div class="col-md-3 mb-3">
-        <div
-          class="progress-card"
-          [style.--progress]="progressPercent(calculateInput.fiNumber) + '%'"
-          [ngbTooltip]="
-            (progressPercent(calculateInput.fiNumber) | number: '1.0-0') +
-            '% funded'
-          "
-          triggers="hover"
-          container="body"
-        >
-          <div
-            class="text-muted small"
-            ngbTooltip="The total portfolio value needed so that withdrawals at your 
-            safe withdrawal rate cover your annual expenses, adjusted for estimated taxes on withdrawals.
-            Based on a blended tax rate of {{ blendedTaxRate.toFixed(1) }}% ({{
-              taxFreePercentage.toFixed(0)
-            }}% tax-free, {{
-              taxDeferredPercentage.toFixed(0)
-            }}% tax-deferred, {{ taxablePercentage.toFixed(0) }}% taxable)."
-            placement="top"
-            triggers="click:blur hover"
-            container="body"
-          >
-            FIRE Number (Tax-Adjusted) <i class="fas fa-info-circle"></i>
+    </div>
+
+    <div class="col">
+      <div
+        class="metric-card progress-card card h-100"
+        [style.--progress]="progressPercent(calculateInput.fiNumber) + '%'"
+        ngbTooltip="The portfolio needed so withdrawals at your safe withdrawal rate cover your annual expenses, adjusted for estimated taxes. Blended tax rate {{ blendedTaxRate.toFixed(1) }}% ({{ taxFreePercentage.toFixed(0) }}% tax-free, {{ taxDeferredPercentage.toFixed(0) }}% tax-deferred, {{ taxablePercentage.toFixed(0) }}% taxable). You're {{ progressPercent(calculateInput.fiNumber) | number: '1.0-0' }}% funded."
+        placement="top"
+        triggers="click:blur hover"
+        container="body"
+      >
+        <div class="card-body">
+          <div class="metric-label">
+            FIRE Number <i class="fas fa-info-circle"></i>
           </div>
-          <div class="h4 mb-0">
+          <div class="metric-value">
             {{ formatCurrency(calculateInput.fiNumber) }}
           </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- Minimum Monthly Contribution -->
-  <div class="mb-4" *ngIf="minMonthlyContribution !== null">
-    <h4 class="fw-light mb-3">
-      <span
-        ngbTooltip="The minimum monthly contribution needed so that your portfolio grows to your FIRE Number by your target retirement age of {{ calculateInput.retirementAge }}, assuming a {{ (calculateInput.expectedAnnualGrowthRate * 100).toFixed(1) }}% annual growth rate."
+    <div class="col" *ngIf="minMonthlyContribution !== null">
+      <div
+        class="metric-card card h-100"
+        ngbTooltip="The minimum monthly contribution so your portfolio grows to your FIRE Number by age {{ calculateInput.retirementAge }} at a {{ (calculateInput.expectedAnnualGrowthRate * 100).toFixed(1) }}% annual growth rate. You currently contribute {{ formatCurrency(calculateInput.monthlyContribution) }}/mo."
         placement="top"
         triggers="click:blur hover"
         container="body"
-      >Minimum Monthly Contribution to FIRE <i class="fas fa-info-circle small"></i></span>
-    </h4>
-    <div class="row">
-      <div class="col-md-3 mb-3">
-        <div *ngIf="minMonthlyContribution === 0; else showContribution">
-          <div class="text-muted small">Required Contribution</div>
-          <div class="h4 mb-0 text-success">Already coasting!</div>
-          <div class="small text-muted">Your portfolio will reach your FIRE Number without further contributions.</div>
-        </div>
-        <ng-template #showContribution>
-          <div class="text-muted small">Required Contribution</div>
-          <div class="h4 mb-0">{{ formatCurrency(minMonthlyContribution) }}/mo</div>
-          <div class="small text-muted">
-            <span *ngIf="calculateInput.monthlyContribution >= minMonthlyContribution; else behindPace" class="text-success">
-              On track — contributing {{ formatCurrency(calculateInput.monthlyContribution) }}/mo
-            </span>
-            <ng-template #behindPace>
-              <span class="text-warning">Currently contributing {{ formatCurrency(calculateInput.monthlyContribution) }}/mo</span>
-            </ng-template>
+      >
+        <div class="card-body">
+          <div class="metric-label">
+            Min. Contribution <i class="fas fa-info-circle"></i>
           </div>
-        </ng-template>
+          <ng-container *ngIf="minMonthlyContribution === 0; else showContribution">
+            <div class="metric-value text-success">Coasting</div>
+          </ng-container>
+          <ng-template #showContribution>
+            <div
+              class="metric-value"
+              [class.text-success]="calculateInput.monthlyContribution >= minMonthlyContribution"
+            >
+              {{ formatCurrency(minMonthlyContribution) }}/mo
+            </div>
+            <div
+              class="metric-tag"
+              [class.text-success]="calculateInput.monthlyContribution >= minMonthlyContribution"
+              [class.text-warning]="calculateInput.monthlyContribution < minMonthlyContribution"
+            >
+              {{ calculateInput.monthlyContribution >= minMonthlyContribution ? 'on track' : 'behind' }}
+            </div>
+          </ng-template>
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div
+        class="metric-card card h-100"
+        ngbTooltip="Without further contributions, your current portfolio would grow into enough to cover expenses in roughly this many years — i.e. how much longer you'd need to work."
+        placement="top"
+        triggers="click:blur hover"
+        container="body"
+      >
+        <div class="card-body">
+          <div class="metric-label">
+            Years at Coast <i class="fas fa-info-circle"></i>
+          </div>
+          <div class="metric-value">{{ calculateInput.coastYearsRange }}</div>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- Coast FIRE Scenarios -->
-  <div class="mb-4">
-    <h4 class="fw-light mb-3">
-      <span
-        ngbTooltip="Coast FIRE is the amount you need saved today so that investment growth alone will reach your FIRE Number by retirement — without any further contributions."
-        placement="top"
-        triggers="click:blur hover"
+  <h4 class="fw-light mb-3">
+    <span
+      ngbTooltip="Coast FIRE is the amount you need saved today so that investment growth alone reaches your FIRE Number by retirement — without any further contributions."
+      placement="top"
+      triggers="click:blur hover"
+      container="body"
+      >Coast FIRE Today <i class="fas fa-info-circle small"></i
+    ></span>
+  </h4>
+  <div class="row row-cols-2 row-cols-md-3 g-3 mb-4">
+    <div class="col">
+      <div
+        class="metric-card progress-card card h-100"
+        [style.--progress]="progressPercent(calculateInput.coastFirePlusFive) + '%'"
+        ngbTooltip="{{ progressPercent(calculateInput.coastFirePlusFive) | number: '1.0-0' }}% funded"
+        triggers="hover"
         container="body"
-        >Coast FIRE Numbers Today <i class="fas fa-info-circle small"></i
-      ></span>
-    </h4>
-    <div class="row">
-      <div class="col-md-3 mb-3">
-        <div
-          class="progress-card"
-          [style.--progress]="
-            progressPercent(calculateInput.coastFirePlusFive) + '%'
-          "
-          [ngbTooltip]="
-            (progressPercent(calculateInput.coastFirePlusFive)
-              | number: '1.0-0') + '% funded'
-          "
-          triggers="hover"
-          container="body"
-        >
-          <div class="text-muted small">Conservative (+5 years)</div>
-          <div class="h4 mb-1">
+      >
+        <div class="card-body">
+          <div class="metric-label">
+            Conservative
+            <span class="metric-tag">age {{ calculateInput.retirementAge + 5 }}</span>
+          </div>
+          <div class="metric-value">
             {{ formatCurrency(calculateInput.coastFirePlusFive) }}
-          </div>
-          <div class="small text-muted">
-            Retire at age {{ calculateInput.retirementAge + 5 }}
-          </div>
-        </div>
-      </div>
-      <div class="col-md-3 mb-3">
-        <div
-          class="progress-card"
-          [style.--progress]="
-            progressPercent(calculateInput.coastFireNumber) + '%'
-          "
-          [ngbTooltip]="
-            (progressPercent(calculateInput.coastFireNumber)
-              | number: '1.0-0') + '% funded'
-          "
-          triggers="hover"
-          container="body"
-        >
-          <div class="text-muted small">Baseline</div>
-          <div class="h4 mb-1">
-            {{ formatCurrency(calculateInput.coastFireNumber) }}
-          </div>
-          <div class="small text-muted">
-            Retire at age {{ calculateInput.retirementAge }}
-          </div>
-        </div>
-      </div>
-      <div class="col-md-3 mb-3">
-        <div
-          class="progress-card"
-          [style.--progress]="
-            progressPercent(calculateInput.coastFireMinusFive) + '%'
-          "
-          [ngbTooltip]="
-            (progressPercent(calculateInput.coastFireMinusFive)
-              | number: '1.0-0') + '% funded'
-          "
-          triggers="hover"
-          container="body"
-        >
-          <div class="text-muted small">Aggressive (-5 years)</div>
-          <div class="h4 mb-1">
-            {{ formatCurrency(calculateInput.coastFireMinusFive) }}
-          </div>
-          <div class="small text-muted">
-            Retire at age {{ calculateInput.retirementAge - 5 }}
           </div>
         </div>
       </div>
     </div>
-  </div>
-
-  <!-- Years of Working at Coast -->
-  <div class="mb-4">
-    <h4 class="fw-light mb-3">
-      <span
-        ngbTooltip="Your current portfolio would grow into enough to cover expenses in roughly this many years. In other words, if you do not contribute any more to savings, you would need to work this much longer."
-        placement="top"
-        triggers="click:blur hover"
+    <div class="col">
+      <div
+        class="metric-card progress-card card h-100"
+        [style.--progress]="progressPercent(calculateInput.coastFireNumber) + '%'"
+        ngbTooltip="{{ progressPercent(calculateInput.coastFireNumber) | number: '1.0-0' }}% funded"
+        triggers="hover"
         container="body"
       >
-        Years of Working at Coast <i class="fas fa-info-circle"></i>
-      </span>
-    </h4>
-    <div class="row">
-      <div class="h4 mb-0">{{ calculateInput.coastYearsRange }}</div>
+        <div class="card-body">
+          <div class="metric-label">
+            Baseline
+            <span class="metric-tag">age {{ calculateInput.retirementAge }}</span>
+          </div>
+          <div class="metric-value">
+            {{ formatCurrency(calculateInput.coastFireNumber) }}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col">
+      <div
+        class="metric-card progress-card card h-100"
+        [style.--progress]="progressPercent(calculateInput.coastFireMinusFive) + '%'"
+        ngbTooltip="{{ progressPercent(calculateInput.coastFireMinusFive) | number: '1.0-0' }}% funded"
+        triggers="hover"
+        container="body"
+      >
+        <div class="card-body">
+          <div class="metric-label">
+            Aggressive
+            <span class="metric-tag">age {{ calculateInput.retirementAge - 5 }}</span>
+          </div>
+          <div class="metric-value">
+            {{ formatCurrency(calculateInput.coastFireMinusFive) }}
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -185,22 +165,38 @@
     "
   >
     <h4 class="fw-light mb-3">Projected Achievement Dates</h4>
-    <div class="row">
-      <div class="col-md-3 mb-3" *ngIf="coastFirePlusFiveAchievedDate">
-        <div class="text-muted small">Coast FIRE (+5y)</div>
-        <div class="h5 mb-0">{{ coastFirePlusFiveAchievedDate }}</div>
+    <div class="row row-cols-2 row-cols-md-4 g-3">
+      <div class="col" *ngIf="coastFirePlusFiveAchievedDate">
+        <div class="metric-card card h-100">
+          <div class="card-body">
+            <div class="metric-label">Coast FIRE (+5y)</div>
+            <div class="metric-value sm">{{ coastFirePlusFiveAchievedDate }}</div>
+          </div>
+        </div>
       </div>
-      <div class="col-md-3 mb-3" *ngIf="coastFireAchievedDate">
-        <div class="text-muted small">Coast FIRE</div>
-        <div class="h5 mb-0">{{ coastFireAchievedDate }}</div>
+      <div class="col" *ngIf="coastFireAchievedDate">
+        <div class="metric-card card h-100">
+          <div class="card-body">
+            <div class="metric-label">Coast FIRE</div>
+            <div class="metric-value sm">{{ coastFireAchievedDate }}</div>
+          </div>
+        </div>
       </div>
-      <div class="col-md-3 mb-3" *ngIf="coastFireMinusFiveAchievedDate">
-        <div class="text-muted small">Coast FIRE (-5y)</div>
-        <div class="h5 mb-0">{{ coastFireMinusFiveAchievedDate }}</div>
+      <div class="col" *ngIf="coastFireMinusFiveAchievedDate">
+        <div class="metric-card card h-100">
+          <div class="card-body">
+            <div class="metric-label">Coast FIRE (-5y)</div>
+            <div class="metric-value sm">{{ coastFireMinusFiveAchievedDate }}</div>
+          </div>
+        </div>
       </div>
-      <div class="col-md-3 mb-3" *ngIf="fireAchievedDate">
-        <div class="text-muted small">Full FIRE</div>
-        <div class="h5 mb-0">{{ fireAchievedDate }}</div>
+      <div class="col" *ngIf="fireAchievedDate">
+        <div class="metric-card card h-100">
+          <div class="card-body">
+            <div class="metric-label">Full FIRE</div>
+            <div class="metric-value sm">{{ fireAchievedDate }}</div>
+          </div>
+        </div>
       </div>
     </div>
   </div>

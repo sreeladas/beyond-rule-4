@@ -23,12 +23,17 @@ export class MilestonesComponent implements OnInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    if (changes && changes.calculateInput && changes.calculateInput.currentValue) {
+    // Recompute whenever either input changes (the forecast can update without
+    // the calculateInput reference changing).
+    if (this.calculateInput && this.forecast) {
       this.calculate();
     }
   }
 
   calculate() {
+    if (!this.forecast || !this.forecast.monthlyForecasts) {
+      return;
+    }
     const eclipseForecast = this.forecast.monthlyForecasts.find(m => {
       return m.totalContributions <= m.totalReturns;
     });

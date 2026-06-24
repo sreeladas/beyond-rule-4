@@ -1,0 +1,174 @@
+<div *ngIf="calculateInput">
+  <!-- Top controls -->
+  <div class="row g-3 mb-3 align-items-end">
+    <div class="col-sm-4 col-md-3">
+      <label class="form-label small text-muted mb-1">Windfall amount</label>
+      <input
+        type="number"
+        class="form-control"
+        [(ngModel)]="windfallAmount"
+        (ngModelChange)="onInputsChange()"
+      />
+      <div class="form-text">Reference total — split it across each scenario row.</div>
+    </div>
+
+    <ng-container *ngIf="adjustments.length > 0; else noAdjustments">
+      <div class="col-sm-4 col-md-3">
+        <label class="form-label small text-muted mb-1">
+          Debt payoff adjustment
+          <i
+            class="fas fa-info-circle small"
+            ngbTooltip="Pick the contribution adjustment representing this debt's freed payment. Money sent to Debt in a scenario moves that payoff earlier."
+            triggers="click:blur hover"
+            container="body"
+          ></i>
+        </label>
+        <select
+          class="form-select"
+          [(ngModel)]="debtAdjustmentName"
+          (ngModelChange)="onInputsChange()"
+        >
+          <option [ngValue]="null">— none —</option>
+          <option *ngFor="let a of adjustments" [ngValue]="a.name">
+            {{ a.name || '(unnamed)' }}
+          </option>
+        </select>
+      </div>
+      <div class="col-sm-4 col-md-2">
+        <label class="form-label small text-muted mb-1">Debt balance</label>
+        <input
+          type="number"
+          class="form-control"
+          [(ngModel)]="debtBalance"
+          (ngModelChange)="onInputsChange()"
+        />
+      </div>
+      <div class="col-sm-4 col-md-2">
+        <label class="form-label small text-muted mb-1">Debt rate %</label>
+        <input
+          type="number"
+          step="0.1"
+          class="form-control"
+          [(ngModel)]="debtRatePercent"
+          (ngModelChange)="onInputsChange()"
+        />
+      </div>
+    </ng-container>
+    <ng-template #noAdjustments>
+      <div class="col-sm-8 col-md-6">
+        <div class="form-text mt-2">
+          Add a contribution adjustment for a debt's payoff (in the budget
+          inputs) to allocate to debt in a scenario.
+        </div>
+      </div>
+    </ng-template>
+  </div>
+
+  <!-- Comparison table -->
+  <div class="table-responsive">
+    <table class="table table-sm align-middle windfall-table mb-2">
+      <thead>
+        <tr>
+          <th>Scenario</th>
+          <th class="text-end">Tax-free</th>
+          <th class="text-end">Tax-deferred</th>
+          <th class="text-end">Taxable</th>
+          <th class="text-end">Debt</th>
+          <th>Full FI</th>
+          <th>Coast (+5y)</th>
+          <th>Coast</th>
+          <th>Coast (−5y)</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Baseline -->
+        <tr class="table-light">
+          <td class="fw-semibold">
+            Do nothing
+            <div class="small text-muted">spend it</div>
+          </td>
+          <td class="text-end text-muted">—</td>
+          <td class="text-end text-muted">—</td>
+          <td class="text-end text-muted">—</td>
+          <td class="text-end text-muted">—</td>
+          <td *ngFor="let m of [baselineMilestones?.fi, baselineMilestones?.coastPlusFive, baselineMilestones?.coast, baselineMilestones?.coastMinusFive]">
+            <div>{{ formatDate(m?.date) }}</div>
+            <div class="small text-muted" *ngIf="m?.netWorth != null">
+              {{ m.netWorth | currency: calculateInput.currencyIsoCode : 'symbol' : '1.0-0' }}
+            </div>
+          </td>
+          <td></td>
+        </tr>
+
+        <!-- Scenario rows -->
+        <tr *ngFor="let s of scenarios; let i = index">
+          <td>
+            <input
+              type="text"
+              class="form-control form-control-sm name-input"
+              [(ngModel)]="s.name"
+              (ngModelChange)="onInputsChange()"
+            />
+            <div class="small text-muted" *ngIf="allocated(s) !== windfallAmount">
+              {{ allocated(s) | currency: calculateInput.currencyIsoCode : 'symbol' : '1.0-0' }} of
+              {{ windfallAmount | currency: calculateInput.currencyIsoCode : 'symbol' : '1.0-0' }}
+            </div>
+          </td>
+          <td>
+            <input type="number" class="form-control form-control-sm alloc-input"
+              [(ngModel)]="s.alloc.taxFree" (ngModelChange)="onInputsChange()" />
+          </td>
+          <td>
+            <input type="number" class="form-control form-control-sm alloc-input"
+              [(ngModel)]="s.alloc.taxDeferred" (ngModelChange)="onInputsChange()" />
+            <div class="small text-success" *ngIf="hasRefund(results[i])"
+              ngbTooltip="RRSP refund reinvested tax-free" container="body">
+              ↩ {{ results[i].refund | currency: calculateInput.currencyIsoCode : 'symbol' : '1.0-0' }}
+            </div>
+          </td>
+          <td>
+            <input type="number" class="form-control form-control-sm alloc-input"
+              [(ngModel)]="s.alloc.taxable" (ngModelChange)="onInputsChange()" />
+          </td>
+          <td>
+            <input type="number" class="form-control form-control-sm alloc-input"
+              [(ngModel)]="s.alloc.debt" (ngModelChange)="onInputsChange()"
+              [disabled]="!debtConfigured" />
+          </td>
+
+          <!-- Full FI with delta -->
+          <td>
+            <div>{{ formatDate(results[i]?.milestones?.fi?.date) }}</div>
+            <div class="small text-muted" *ngIf="results[i]?.milestones?.fi?.netWorth != null">
+              {{ results[i].milestones.fi.netWorth | currency: calculateInput.currencyIsoCode : 'symbol' : '1.0-0' }}
+            </div>
+            <div class="small" [ngClass]="deltaClass(results[i])"
+              *ngIf="deltaLabel(results[i]?.deltaMonths)">
+              {{ deltaLabel(results[i]?.deltaMonths) }}
+            </div>
+          </td>
+
+          <!-- Coast milestones -->
+          <td *ngFor="let m of [results[i]?.milestones?.coastPlusFive, results[i]?.milestones?.coast, results[i]?.milestones?.coastMinusFive]">
+            <div>{{ formatDate(m?.date) }}</div>
+            <div class="small text-muted" *ngIf="m?.netWorth != null">
+              {{ m.netWorth | currency: calculateInput.currencyIsoCode : 'symbol' : '1.0-0' }}
+            </div>
+          </td>
+
+          <td>
+            <button type="button" class="btn btn-sm btn-link text-danger p-0"
+              (click)="removeScenario(i)" ngbTooltip="Remove" container="body">
+              <i class="fas fa-times"></i>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <button type="button" class="btn btn-sm btn-outline-primary" (click)="addScenario()">
+    <i class="fas fa-plus-circle"></i> Add scenario
+  </button>
+</div>

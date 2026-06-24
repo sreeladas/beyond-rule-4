@@ -8,6 +8,7 @@ import {
 
 import { CalculateInput } from '../../models/calculate-input.model';
 import { Forecast } from '../../models/forecast.model';
+import { extractMilestones, formatMonthYear } from '../milestone-utility';
 
 @Component({
   selector: 'app-fire-dashboard',
@@ -39,30 +40,15 @@ export class FireDashboardComponent implements OnInit, OnChanges {
       return;
     }
 
-    // Find achievement dates
-    const fireAchieved = this.forecast.monthlyForecasts.find(
-      (f) => f.fireAchieved
+    const milestones = extractMilestones(this.forecast);
+    this.fireAchievedDate = formatMonthYear(milestones.fi.date);
+    this.coastFireAchievedDate = formatMonthYear(milestones.coast.date);
+    this.coastFireMinusFiveAchievedDate = formatMonthYear(
+      milestones.coastMinusFive.date
     );
-    const coastFireAchieved = this.forecast.monthlyForecasts.find(
-      (f) => f.coastFireAchieved
+    this.coastFirePlusFiveAchievedDate = formatMonthYear(
+      milestones.coastPlusFive.date
     );
-    const coastFireMinusFiveAchieved = this.forecast.monthlyForecasts.find(
-      (f) => f.netWorth >= f.coastFireMinusFive
-    );
-    const coastFirePlusFiveAchieved = this.forecast.monthlyForecasts.find(
-      (f) => f.netWorth >= f.coastFirePlusFive
-    );
-
-    this.fireAchievedDate = fireAchieved ? fireAchieved.toDateString() : null;
-    this.coastFireAchievedDate = coastFireAchieved
-      ? coastFireAchieved.toDateString()
-      : null;
-    this.coastFireMinusFiveAchievedDate = coastFireMinusFiveAchieved
-      ? coastFireMinusFiveAchieved.toDateString()
-      : null;
-    this.coastFirePlusFiveAchievedDate = coastFirePlusFiveAchieved
-      ? coastFirePlusFiveAchieved.toDateString()
-      : null;
   }
 
   formatCurrency(amount: number): string {
@@ -99,7 +85,8 @@ export class FireDashboardComponent implements OnInit, OnChanges {
         2 +
       (this.calculateInput.investmentIncomeRatio *
         (this.calculateInput.investmentIncomeRateMin +
-          this.calculateInput.investmentIncomeRateMax)) /
+          this.calculateInput.investmentIncomeRateMax) *
+        this.calculateInput.taxableGainFraction) /
         2;
     return avgRate * 100;
   }

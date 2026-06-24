@@ -1,4 +1,4 @@
-import { Birthdate } from '../input/ynab/birthdate-utility';
+import { Birthdate, birthdateToDate } from '../input/ynab/birthdate-utility';
 import { round } from '../utilities/number-utility';
 import { ContributionAdjustment } from './contribution-adjustment.model';
 
@@ -25,7 +25,12 @@ export class CalculateInput {
   taxDeferredRateMin = 0.3;
   taxDeferredRateMax = 0.5;
   investmentIncomeRateMin = 0.15;
-  investmentIncomeRateMax = 0.25;
+  investmentIncomeRateMax = 0.2;
+
+  // Assumed share of a taxable (non-registered) account that is unrealized gains
+  // at retirement; only gains are taxed on withdrawal, basis is not. Fixed 50%
+  // assumption, so the taxable tax rate applies to half of a taxable withdrawal.
+  taxableGainFraction = 0.5;
 
   public constructor(init?: Partial<CalculateInput>) {
     Object.assign(
@@ -66,7 +71,9 @@ export class CalculateInput {
     const blendedTaxRate =
       this.taxFreeRatio * 0 +
       this.taxDeferredRatio * this.taxDeferredRateMin +
-      this.investmentIncomeRatio * this.investmentIncomeRateMin;
+      this.investmentIncomeRatio *
+        this.investmentIncomeRateMin *
+        this.taxableGainFraction;
     return 1 / (1 - blendedTaxRate);
   }
 
@@ -74,7 +81,9 @@ export class CalculateInput {
     const blendedTaxRate =
       this.taxFreeRatio * 0 +
       this.taxDeferredRatio * this.taxDeferredRateMax +
-      this.investmentIncomeRatio * this.investmentIncomeRateMax;
+      this.investmentIncomeRatio *
+        this.investmentIncomeRateMax *
+        this.taxableGainFraction;
     return 1 / (1 - blendedTaxRate);
   }
 
@@ -99,8 +108,17 @@ export class CalculateInput {
     if (!this.birthdate || !this.birthdate.year) {
       return 0;
     }
-    const currentYear = new Date().getFullYear();
-    return currentYear - this.birthdate.year;
+    const dob = birthdateToDate(this.birthdate);
+    if (!dob || isNaN(dob.getTime())) {
+      return 0;
+    }
+    // Precise fractional age in years, so Coast FIRE / min-contribution math
+    // agrees with fi-text's date-based "age at FI" (was year-only before).
+    const ageMs = Date.now() - dob.getTime();
+    if (ageMs <= 0) {
+      return 0;
+    }
+    return ageMs / (365.25 * 24 * 60 * 60 * 1000);
   }
 
   get coastFireNumber(): number {

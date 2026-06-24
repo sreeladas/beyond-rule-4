@@ -1,0 +1,19 @@
+.windfall-table th {
+  font-size: 0.78rem;
+  color: var(--bs-secondary-color);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.alloc-input {
+  width: 6.5rem;
+  text-align: right;
+}
+
+.name-input {
+  width: 9rem;
+}
+
+.windfall-table td {
+  vertical-align: top;
+}

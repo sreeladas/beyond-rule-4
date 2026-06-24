@@ -3,9 +3,42 @@
   margin-right: 2rem;
 }
 
+.metric-card .card-body {
+  padding: 0.85rem 1rem;
+}
+
+.metric-label {
+  font-size: 0.78rem;
+  color: var(--bs-secondary-color);
+  margin-bottom: 0.15rem;
+  white-space: nowrap;
+}
+
+.metric-value {
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.metric-value.sm {
+  font-size: 1.05rem;
+}
+
+.metric-tag {
+  font-size: 0.72rem;
+  color: var(--bs-secondary-color);
+  text-transform: lowercase;
+}
+
 .progress-card {
   position: relative;
   overflow: hidden;
+}
+
+/* Keep card content above the funding-progress fill */
+.progress-card .card-body {
+  position: relative;
+  z-index: 1;
 }
 
 .progress-card::after {
@@ -19,6 +52,7 @@
   outline: var(--bs-brand-100) solid 1px;
   opacity: 0.3;
   transition: height 0.4s ease;
+  z-index: 0;
 }
 
 @media (max-width: 768px) {

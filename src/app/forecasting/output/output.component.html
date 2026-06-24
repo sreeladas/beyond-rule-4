@@ -95,6 +95,36 @@
         </div>
       </div>
     </div>
+
+    <!-- Windfall Comparison -->
+    <div class="mb-4">
+      <button
+        class="btn btn-link w-100 text-start p-0"
+        type="button"
+        (click)="isWindfallCollapsed = !isWindfallCollapsed"
+        [attr.aria-expanded]="!isWindfallCollapsed"
+        aria-controls="windfall-content"
+      >
+        <h3 class="fw-bolder mb-0">
+          Windfall Comparison
+          <i
+            class="fas"
+            [class.fa-chevron-down]="isWindfallCollapsed"
+            [class.fa-chevron-up]="!isWindfallCollapsed"
+            [class.float-end]="true"
+          ></i>
+        </h3>
+      </button>
+      <div id="windfall-content" [ngbCollapse]="isWindfallCollapsed">
+        <div class="mt-2">
+          <app-windfall
+            [calculateInput]="calculateInput"
+            [forecast]="forecast"
+          >
+          </app-windfall>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
