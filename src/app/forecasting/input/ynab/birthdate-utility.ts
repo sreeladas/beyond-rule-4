@@ -16,16 +16,3 @@ export function birthdateToDate(birthdate: Birthdate): Date {
     return null;
   }
 }
-
-/**
- * Converts a JavaScript Date object to a Birthdate object.
- * @param date The Date object to convert.
- * @returns A Birthdate object representing the same date.
- */
-export function dateToBirthdate(date: Date): Birthdate {
-  return {
-    year: date.getFullYear(),
-    month: date.getMonth() + 1, // Months are 0-based in JavaScript
-    day: date.getDate(),
-  };
-}
