@@ -5,7 +5,6 @@ import { SharedModule } from '../../shared.module';
 import { YnabModule } from './ynab/ynab.module';
 
 import { ForecastingInputComponent } from './input.component';
-import { BasicInputComponent } from './basic/basic-input.component';
 
 @NgModule({
   imports: [
@@ -15,8 +14,7 @@ import { BasicInputComponent } from './basic/basic-input.component';
   ],
   exports: [ForecastingInputComponent],
   declarations: [
-    ForecastingInputComponent,
-    BasicInputComponent
+    ForecastingInputComponent
   ],
   providers: [],
 })
