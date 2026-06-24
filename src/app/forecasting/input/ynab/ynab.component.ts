@@ -55,6 +55,10 @@ export class YnabComponent implements OnInit {
   public safeWithdrawalRatePercentage = 4.0;
   public expectedAnnualGrowthRate = 7.0;
   public retirementAge = 60;
+  public inflationRate = 2.5;
+  public contributionGrowthYear1 = 0;
+  public contributionGrowthYear2 = 0;
+  public contributionGrowthRate = 0;
 
   public budgets: ynab.BudgetSummary[];
   public budget: ynab.BudgetDetail;
@@ -158,6 +162,32 @@ export class YnabComponent implements OnInit {
       this.retirementAge = retirementAgeStorage;
     }
 
+    // Use isNaN (not truthiness) so a stored 0% is honored.
+    const inflationRateStorage = parseFloat(
+      window.localStorage.getItem('ff-inflation-rate'),
+    );
+    if (!isNaN(inflationRateStorage)) {
+      this.inflationRate = inflationRateStorage;
+    }
+    const contributionGrowthYear1Storage = parseFloat(
+      window.localStorage.getItem('ff-contribution-growth-year1'),
+    );
+    if (!isNaN(contributionGrowthYear1Storage)) {
+      this.contributionGrowthYear1 = contributionGrowthYear1Storage;
+    }
+    const contributionGrowthYear2Storage = parseFloat(
+      window.localStorage.getItem('ff-contribution-growth-year2'),
+    );
+    if (!isNaN(contributionGrowthYear2Storage)) {
+      this.contributionGrowthYear2 = contributionGrowthYear2Storage;
+    }
+    const contributionGrowthRateStorage = parseFloat(
+      window.localStorage.getItem('ff-contribution-growth-rate'),
+    );
+    if (!isNaN(contributionGrowthRateStorage)) {
+      this.contributionGrowthRate = contributionGrowthRateStorage;
+    }
+
     this.budgetForm = this.formBuilder.group({
       selectedBudget: ['', [Validators.required]],
       selectedMonthA: ['', [Validators.required]],
@@ -173,6 +203,22 @@ export class YnabComponent implements OnInit {
       expectedAnnualGrowthRate: [
         this.expectedAnnualGrowthRate,
         [Validators.required, Validators.max(99.99), Validators.max(0.01)],
+      ],
+      inflationRate: [
+        this.inflationRate,
+        [Validators.required, Validators.min(0), Validators.max(99.99)],
+      ],
+      contributionGrowthYear1: [
+        this.contributionGrowthYear1,
+        [Validators.required],
+      ],
+      contributionGrowthYear2: [
+        this.contributionGrowthYear2,
+        [Validators.required],
+      ],
+      contributionGrowthRate: [
+        this.contributionGrowthRate,
+        [Validators.required],
       ],
       birthdate: [this.birthdate, [Validators.required]],
       retirementAge: [
@@ -260,6 +306,10 @@ export class YnabComponent implements OnInit {
       0,
       this.expectedAnnualGrowthRate / 100,
     );
+    result.inflationRate = Math.max(0, this.inflationRate / 100);
+    result.contributionGrowthYear1 = this.contributionGrowthYear1 / 100;
+    result.contributionGrowthYear2 = this.contributionGrowthYear2 / 100;
+    result.contributionGrowthRate = this.contributionGrowthRate / 100;
 
     if (taxRatios) {
       result.taxFreeRatio = taxRatios.taxFreeRatio;
@@ -489,6 +539,46 @@ export class YnabComponent implements OnInit {
       window.localStorage.setItem(
         'ff-expect-annual-growth-rate',
         parsedExpectedAnnualGrowthRate.toString(),
+      );
+    }
+    const parsedInflationRate = Number.parseFloat(
+      this.budgetForm.value.inflationRate,
+    );
+    if (!Number.isNaN(parsedInflationRate)) {
+      this.inflationRate = parsedInflationRate;
+      window.localStorage.setItem(
+        'ff-inflation-rate',
+        parsedInflationRate.toString(),
+      );
+    }
+    const parsedContributionGrowthYear1 = Number.parseFloat(
+      this.budgetForm.value.contributionGrowthYear1,
+    );
+    if (!Number.isNaN(parsedContributionGrowthYear1)) {
+      this.contributionGrowthYear1 = parsedContributionGrowthYear1;
+      window.localStorage.setItem(
+        'ff-contribution-growth-year1',
+        parsedContributionGrowthYear1.toString(),
+      );
+    }
+    const parsedContributionGrowthYear2 = Number.parseFloat(
+      this.budgetForm.value.contributionGrowthYear2,
+    );
+    if (!Number.isNaN(parsedContributionGrowthYear2)) {
+      this.contributionGrowthYear2 = parsedContributionGrowthYear2;
+      window.localStorage.setItem(
+        'ff-contribution-growth-year2',
+        parsedContributionGrowthYear2.toString(),
+      );
+    }
+    const parsedContributionGrowthRate = Number.parseFloat(
+      this.budgetForm.value.contributionGrowthRate,
+    );
+    if (!Number.isNaN(parsedContributionGrowthRate)) {
+      this.contributionGrowthRate = parsedContributionGrowthRate;
+      window.localStorage.setItem(
+        'ff-contribution-growth-rate',
+        parsedContributionGrowthRate.toString(),
       );
     }
     const parsedRetirementAge = Number.parseFloat(
@@ -766,6 +856,10 @@ export class YnabComponent implements OnInit {
       includeHiddenYnabCategories: this.includeHiddenYnabCategories,
       monthlyContribution,
       expectedAnnualGrowthRate: this.expectedAnnualGrowthRate,
+      inflationRate: this.inflationRate,
+      contributionGrowthYear1: this.contributionGrowthYear1,
+      contributionGrowthYear2: this.contributionGrowthYear2,
+      contributionGrowthRate: this.contributionGrowthRate,
       safeWithdrawalRatePercentage: this.safeWithdrawalRatePercentage,
       birthdate: this.birthdate,
       retirementAge: this.retirementAge,

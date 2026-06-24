@@ -261,6 +261,117 @@
               </div>
               <div class="row mb-3">
                 <label
+                  for="inflationRate"
+                  class="col-sm-12 col-md-5 col-form-label"
+                  >Inflation Rate</label
+                >
+                <div class="col">
+                  <div class="input-group">
+                    <input
+                      type="number"
+                      class="form-control"
+                      id="inflationRate"
+                      formControlName="inflationRate"
+                      step="0.25"
+                      aria-describedby="inflationRateHelp"
+                    />
+                    <div class="input-group-append">
+                      <div class="input-group-text">%</div>
+                    </div>
+                  </div>
+                  <small id="inflationRateHelp" class="form-text text-muted"
+                    >Erodes the real (today's-dollar) value of your fixed
+                    contribution over time. Doesn't change your return or
+                    expenses — those are already in today's dollars.</small
+                  >
+                </div>
+              </div>
+              <div class="row mb-3">
+                <label
+                  for="contributionGrowthYear1"
+                  class="col-sm-12 col-md-5 col-form-label"
+                  >Year 1 Contribution Growth</label
+                >
+                <div class="col">
+                  <div class="input-group">
+                    <input
+                      type="number"
+                      class="form-control"
+                      id="contributionGrowthYear1"
+                      formControlName="contributionGrowthYear1"
+                      step="0.25"
+                      aria-describedby="contributionGrowthYear1Help"
+                    />
+                    <div class="input-group-append">
+                      <div class="input-group-text">%</div>
+                    </div>
+                  </div>
+                  <small
+                    id="contributionGrowthYear1Help"
+                    class="form-text text-muted"
+                    >Nominal raise to your contribution in the coming year
+                    (optional).</small
+                  >
+                </div>
+              </div>
+              <div class="row mb-3">
+                <label
+                  for="contributionGrowthYear2"
+                  class="col-sm-12 col-md-5 col-form-label"
+                  >Year 2 Contribution Growth</label
+                >
+                <div class="col">
+                  <div class="input-group">
+                    <input
+                      type="number"
+                      class="form-control"
+                      id="contributionGrowthYear2"
+                      formControlName="contributionGrowthYear2"
+                      step="0.25"
+                      aria-describedby="contributionGrowthYear2Help"
+                    />
+                    <div class="input-group-append">
+                      <div class="input-group-text">%</div>
+                    </div>
+                  </div>
+                  <small
+                    id="contributionGrowthYear2Help"
+                    class="form-text text-muted"
+                    >Nominal raise to your contribution in the following year
+                    (optional).</small
+                  >
+                </div>
+              </div>
+              <div class="row mb-3">
+                <label
+                  for="contributionGrowthRate"
+                  class="col-sm-12 col-md-5 col-form-label"
+                  >Ongoing Contribution Growth</label
+                >
+                <div class="col">
+                  <div class="input-group">
+                    <input
+                      type="number"
+                      class="form-control"
+                      id="contributionGrowthRate"
+                      formControlName="contributionGrowthRate"
+                      step="0.25"
+                      aria-describedby="contributionGrowthRateHelp"
+                    />
+                    <div class="input-group-append">
+                      <div class="input-group-text">%</div>
+                    </div>
+                  </div>
+                  <small
+                    id="contributionGrowthRateHelp"
+                    class="form-text text-muted"
+                    >Nominal annual growth applied from year 3 onward. Leave at 0
+                    to keep contributions fixed in nominal dollars.</small
+                  >
+                </div>
+              </div>
+              <div class="row mb-3">
+                <label
                   for="includeHiddenYnabCategories"
                   class="col-sm-12 col-md-5 col-form-label d-flex align-items-center"
                   >Include Hidden Categories</label
