@@ -28,7 +28,6 @@ export class YnabComponent implements OnInit {
   @Output() calculateInputChange = new EventEmitter<CalculateInput>();
 
   budgetForm: UntypedFormGroup;
-  displayContributionInfo = true;
   isBalanceHelpCollapsed = true;
   isContributionHelpCollapsed = true;
   isExpenseHelpCollapsed = true;

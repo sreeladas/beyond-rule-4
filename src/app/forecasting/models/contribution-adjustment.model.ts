@@ -22,12 +22,4 @@ export class ContributionAdjustmentUtility {
 
     return totalAdjustment;
   }
-
-  public static sortAdjustments(
-    adjustments: ContributionAdjustment[]
-  ): ContributionAdjustment[] {
-    return adjustments.sort(
-      (a, b) => a.startDate.getTime() - b.startDate.getTime()
-    );
-  }
 }
