@@ -11,12 +11,26 @@ import { debounce } from 'rxjs/operators';
 import * as ynab from 'ynab';
 
 import { YnabApiService } from '../../../ynab-api/ynab-api.service';
+import { OwnerService } from '../../../household-split/services/owner.service';
 import { CalculateInput } from '../../models/calculate-input.model';
+import {
+  RoomCell,
+  ContributionStream,
+  ContributionTaxType,
+  TaxAdvantagedType,
+  TaxRatios,
+  computeTerminalTaxRatios,
+} from '../../models/contribution-allocator';
 import { round } from '../../utilities/number-utility';
 import CategoryUtility from './category-utility';
 import NoteUtility, { Overrides } from './note-utility';
 import { Birthdate } from './birthdate-utility';
 import { getSelectedMonths, QuickSelectMonthChoice } from './months-utility';
+
+// Income-percent rule for tax-deferred (RRSP-style) yearly new room: 18% of
+// earned income, capped at `ff growth`. `ff limit` is the accumulated starting
+// room. See contribution-allocator.ts.
+const TAX_DEFERRED_INCOME_RATE = 0.18;
 
 @Component({
   selector: 'app-ynab',
@@ -88,6 +102,13 @@ export class YnabComponent implements OnInit {
     };
   };
   public contributionCategories: any;
+  // Realized terminal tax split (fractions, 0..1) when per-person contribution
+  // room is active; null when no `ff room` notes exist (legacy snapshot path).
+  public allocation: {
+    taxFree: number;
+    taxDeferred: number;
+    taxable: number;
+  } | null = null;
   public isUsingSampleData = false;
   public birthdate: Birthdate;
 
@@ -95,6 +116,7 @@ export class YnabComponent implements OnInit {
     private ynabService: YnabApiService,
     private formBuilder: UntypedFormBuilder,
     private activatedRoute: ActivatedRoute,
+    private ownerService: OwnerService,
   ) {
     this.expenses = {
       ynab: {
@@ -291,8 +313,6 @@ export class YnabComponent implements OnInit {
       },
     };
 
-    const taxRatios = this.calculateTaxRatios();
-
     const result = new CalculateInput();
     result.annualExpenses = this.expenses.fi.annual;
     result.leanAnnualExpenses = this.expenses.leanFi.annual;
@@ -315,6 +335,26 @@ export class YnabComponent implements OnInit {
     );
     result.inflationRate = Math.max(0, this.inflationRate / 100);
     result.contributionGrowthRate = this.contributionGrowthRate / 100;
+
+    // Honor per-person contribution room when any account declares it, deriving
+    // the terminal tax split (capped contributions overflow to taxable). With
+    // no room notes, fall back to the legacy point-in-time snapshot unchanged.
+    const yearsToRetirement = Math.max(
+      0,
+      Math.floor(result.retirementAge - result.currentAge),
+    );
+    const allocated = this.calculateAllocatedTaxRatios(
+      yearsToRetirement,
+      result.contributionGrowthRate,
+    );
+    this.allocation = allocated
+      ? {
+          taxFree: allocated.taxFreeRatio,
+          taxDeferred: allocated.taxDeferredRatio,
+          taxable: allocated.investmentIncomeRatio,
+        }
+      : null;
+    const taxRatios = allocated ?? this.calculateTaxRatios();
 
     if (taxRatios) {
       result.taxFreeRatio = taxRatios.taxFreeRatio;
@@ -745,6 +785,205 @@ export class YnabComponent implements OnInit {
     };
   }
 
+  // Realized terminal tax split honoring per-person contribution room. Returns
+  // null when no account declares room (no `ff room` note), so the caller can
+  // fall back to the static balance snapshot.
+  private calculateAllocatedTaxRatios(
+    years: number,
+    contributionGrowthRate: number,
+  ): TaxRatios | null {
+    const cells = this.buildRoomCells();
+    if (cells.length === 0) {
+      return null;
+    }
+    return computeTerminalTaxRatios({
+      cells,
+      streams: this.buildContributionStreams(),
+      startingBalances: this.getBalanceSplit(),
+      years,
+      contributionGrowthRate,
+    });
+  }
+
+  // Per-person, per-type contribution-room cells. `ff limit` is the total
+  // accumulated room available now (starting room); `ff growth` is the dollar
+  // amount of new room added each following year. For tax-deferred, `ff income`
+  // sets that yearly new room to 18% of income (capped at `ff growth`). Owner/
+  // type come from the account name and taxTreatment. Returns [] (legacy
+  // snapshot) when nothing is configured; a person/type that contributes but
+  // has no configured room gets 0, so all of it overflows to taxable.
+  private buildRoomCells(): RoomCell[] {
+    const incomeByOwner = this.incomeByOwner();
+
+    // Limit/growth notes, aggregated per (owner, type).
+    type NoteEntry = {
+      ownerCode: string;
+      type: TaxAdvantagedType;
+      limit?: number;
+      growth?: number;
+    };
+    const notes = new Map<string, NoteEntry>();
+    this.accounts.controls.forEach((a) => {
+      const type = a.value.taxTreatment;
+      if (type !== 'tax-free' && type !== 'tax-deferred') {
+        return;
+      }
+      const limit = Number.parseFloat(a.value.roomLimit);
+      const growth = Number.parseFloat(a.value.roomGrowth);
+      if (Number.isNaN(limit) && Number.isNaN(growth)) {
+        return;
+      }
+      const ownerCode = this.ownerService.ownerCodeForAccountName(a.value.name);
+      const k = `${ownerCode}::${type}`;
+      const entry: NoteEntry = notes.get(k) ?? { ownerCode, type };
+      if (!Number.isNaN(limit)) {
+        entry.limit = Math.max(entry.limit ?? 0, limit);
+      }
+      if (!Number.isNaN(growth)) {
+        entry.growth = Math.max(entry.growth ?? 0, growth);
+      }
+      notes.set(k, entry);
+    });
+
+    // Engage only when the user has configured limits or income somewhere.
+    if (notes.size === 0 && incomeByOwner.size === 0) {
+      return [];
+    }
+
+    // Union of cells that need to exist: configured notes, income-derived
+    // tax-deferred cells, and any (owner, type) that receives contributions.
+    const wanted = new Map<string, { ownerCode: string; type: TaxAdvantagedType }>();
+    for (const [k, v] of notes) {
+      wanted.set(k, { ownerCode: v.ownerCode, type: v.type });
+    }
+    for (const ownerCode of incomeByOwner.keys()) {
+      wanted.set(`${ownerCode}::tax-deferred`, { ownerCode, type: 'tax-deferred' });
+    }
+    this.accounts.controls.forEach((a) => {
+      const type = a.value.taxTreatment;
+      const monthly = Number.parseFloat(a.value.monthlyContribution);
+      if (
+        (type !== 'tax-free' && type !== 'tax-deferred') ||
+        Number.isNaN(monthly) ||
+        monthly <= 0
+      ) {
+        return;
+      }
+      const ownerCode = this.ownerService.ownerCodeForAccountName(a.value.name);
+      wanted.set(`${ownerCode}::${type}`, { ownerCode, type });
+    });
+
+    const cells: RoomCell[] = [];
+    for (const { ownerCode, type } of wanted.values()) {
+      const note = notes.get(`${ownerCode}::${type}`);
+      const startingRoom = note?.limit ?? 0;
+      let annualGrowth = note?.growth ?? 0;
+      if (type === 'tax-deferred') {
+        const income = incomeByOwner.get(ownerCode);
+        if (income) {
+          const earned = income * TAX_DEFERRED_INCOME_RATE;
+          annualGrowth =
+            note?.growth !== undefined ? Math.min(earned, note.growth) : earned;
+        }
+      }
+      cells.push({ ownerCode, type, startingRoom, annualGrowth });
+    }
+    return cells;
+  }
+
+  // Highest income noted across each owner's accounts (income is a per-person
+  // figure that may sit on any of that person's account notes).
+  private incomeByOwner(): Map<string, number> {
+    const map = new Map<string, number>();
+    this.accounts.controls.forEach((a) => {
+      const income = Number.parseFloat(a.value.income);
+      if (Number.isNaN(income)) {
+        return;
+      }
+      const ownerCode = this.ownerService.ownerCodeForAccountName(a.value.name);
+      map.set(ownerCode, Math.max(map.get(ownerCode) ?? 0, income));
+    });
+    return map;
+  }
+
+  // Forward contribution streams: each contributing account becomes a
+  // per-person, per-type stream (capped by its room cell). Typed category
+  // contributions have no owner, so they enter as uncapped streams.
+  private buildContributionStreams(): ContributionStream[] {
+    const streams: ContributionStream[] = [];
+    this.accounts.controls.forEach((a) => {
+      const monthly = Number.parseFloat(a.value.monthlyContribution);
+      const taxTreatment = a.value.taxTreatment;
+      if (Number.isNaN(monthly) || monthly <= 0 || !taxTreatment) {
+        return;
+      }
+      streams.push({
+        ownerCode: this.ownerService.ownerCodeForAccountName(a.value.name),
+        type: taxTreatment,
+        annualContribution: monthly * 12,
+      });
+    });
+
+    const categoryGroups = this.budgetForm.value.categoryGroups || [];
+    categoryGroups.forEach((group) => {
+      group.categories.forEach((category) => {
+        this.pushCategoryStream(streams, 'tax-free', category.taxFreeContribution);
+        this.pushCategoryStream(
+          streams,
+          'tax-deferred',
+          category.taxDeferredContribution,
+        );
+        this.pushCategoryStream(streams, 'taxable', category.taxableContribution);
+      });
+    });
+    return streams;
+  }
+
+  private pushCategoryStream(
+    streams: ContributionStream[],
+    type: ContributionTaxType,
+    monthly: number,
+  ): void {
+    if (!monthly) {
+      return;
+    }
+    streams.push({
+      ownerCode: '__category__',
+      type,
+      annualContribution: monthly * 12,
+    });
+  }
+
+  // Current account balances split by tax treatment — dollars already in each
+  // wrapper, used to seed the terminal split.
+  private getBalanceSplit(): {
+    taxFree: number;
+    taxDeferred: number;
+    taxable: number;
+  } {
+    let taxFree = 0;
+    let taxDeferred = 0;
+    let taxable = 0;
+    this.accounts.controls.forEach((a) => {
+      const balance = Number.parseFloat(a.value.balance);
+      if (Number.isNaN(balance) || balance <= 0) {
+        return;
+      }
+      switch (a.value.taxTreatment) {
+        case 'tax-free':
+          taxFree += balance;
+          break;
+        case 'tax-deferred':
+          taxDeferred += balance;
+          break;
+        case 'taxable':
+          taxable += balance;
+          break;
+      }
+    });
+    return { taxFree, taxDeferred, taxable };
+  }
+
   private mapAccounts(accounts: ynab.Account[]) {
     const mapped = accounts
       .filter((a) => !(a.closed || a.deleted))
@@ -763,6 +1002,9 @@ export class YnabComponent implements OnInit {
             ynabBalance,
             monthlyContribution: overrides.monthlyContribution,
             taxTreatment: overrides.taxTreatment,
+            roomLimit: overrides.roomLimit,
+            roomGrowth: overrides.roomGrowth,
+            income: overrides.income,
           }),
         );
       });

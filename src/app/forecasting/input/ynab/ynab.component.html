@@ -581,6 +581,11 @@
                 </tbody>
               </table>
             </div>
+            <p class="small text-muted mb-1" *ngIf="allocation">
+              At retirement: {{ allocation.taxFree | percent: '1.0-0' }} tax-free ·
+              {{ allocation.taxDeferred | percent: '1.0-0' }} tax-deferred ·
+              {{ allocation.taxable | percent: '1.0-0' }} taxable
+            </p>
             <div *ngIf="!isUsingSampleData">
               <button
                 class="btn btn-link btn-sm p-0 text-muted"
@@ -604,6 +609,7 @@
                     Use <code>FF +</code> (no amount) to include any category's YNAB balance.</p>
                   <p>Accounts: add <code>FF +m <i>amount</i></code> to Account Notes to log a monthly contribution.
                     (<code>BR4</code> commands also still work.)</p>
+                  <p>Wrapper: <code>FF tax-free</code> / <code>tax-deferred</code> / <code>taxable</code>. Room (tax-free/deferred): <code>FF limit</code> (accumulated), <code>FF growth</code> ($/yr), <code>FF income</code> (RRSP 18%); per person = first word of account name. Over-room → taxable.</p>
                 </div>
               </div>
             </div>

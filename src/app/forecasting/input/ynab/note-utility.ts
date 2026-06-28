@@ -9,6 +9,14 @@ export interface Overrides {
   taxFreeContribution: number;
   taxDeferredContribution: number;
   taxableContribution: number;
+  // Contribution-room inputs for the account's (person, type) cell.
+  // `roomLimit` is the annual contribution limit (new room granted each year);
+  // `roomGrowth` is the dollar amount that limit grows by each following Jan 1;
+  // `income` drives the income-percent rule (tax-deferred / RRSP-style).
+  // All optional.
+  roomLimit: number;
+  roomGrowth: number;
+  income: number;
 }
 
 export default class NoteUtility {
@@ -25,6 +33,9 @@ export default class NoteUtility {
       taxFreeContribution: undefined,
       taxDeferredContribution: undefined,
       taxableContribution: undefined,
+      roomLimit: undefined,
+      roomGrowth: undefined,
+      income: undefined,
     };
 
     if (!note) {
@@ -90,6 +101,17 @@ export default class NoteUtility {
         case 'investment':
         case 'brokerage':
           override.taxTreatment = 'taxable';
+          break;
+        case 'limit':
+        case 'roomlimit':
+          override.roomLimit = c.value;
+          break;
+        case 'growth':
+        case 'roomgrowth':
+          override.roomGrowth = c.value;
+          break;
+        case 'income':
+          override.income = c.value;
           break;
         default:
           break;
