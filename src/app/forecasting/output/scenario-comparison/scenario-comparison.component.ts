@@ -7,6 +7,7 @@ import {
   applyEvents,
   toDatedReshapes,
   toRetirements,
+  toHouseholdAdjustments,
 } from '../../models/scenario-event';
 import { computeTerminalTaxRatios } from '../../models/contribution-allocator';
 import { monthsBetween } from '../../utilities/date-utility';
@@ -101,6 +102,10 @@ export class ScenarioComparisonComponent implements OnChanges {
         retirements: [
           ...(projection.retirements ?? []),
           ...toRetirements(compare),
+        ],
+        householdAdjustments: [
+          ...(projection.householdAdjustments ?? []),
+          ...toHouseholdAdjustments(compare),
         ],
         annualCosts:
           (projection.annualCosts ?? 0) +

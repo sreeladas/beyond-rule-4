@@ -87,8 +87,8 @@ export class FireDashboardComponent implements OnInit, OnChanges {
     const avgRate =
       this.calculateInput.taxFreeRatio * 0 +
       (this.calculateInput.taxDeferredRatio *
-        (this.calculateInput.taxDeferredRateMin +
-          this.calculateInput.taxDeferredRateMax)) /
+        (this.calculateInput.taxDeferredWithdrawalRateMin +
+          this.calculateInput.taxDeferredWithdrawalRateMax)) /
         2 +
       (this.calculateInput.investmentIncomeRatio *
         (this.calculateInput.investmentIncomeRateMin +

@@ -3,6 +3,7 @@ import { ContributionAdjustment } from './contribution-adjustment.model';
 import {
   ContributionTaxType,
   DatedReshape,
+  HouseholdAdjustment,
   Retirement,
 } from './contribution-allocator';
 
@@ -108,6 +109,19 @@ export function toDatedReshapes(
     .map((a) => ({
       year: yearsFromNow(a.startDate, now),
       amount: -a.netWorthAdjustment,
+    }));
+}
+
+export function toHouseholdAdjustments(
+  adjustments: ContributionAdjustment[],
+  now = Date.now()
+): HouseholdAdjustment[] {
+  return adjustments
+    .filter((a) => a.monthlyAdjustment > 0)
+    .map((a) => ({
+      startYear: yearsFromNow(a.startDate, now),
+      endYear: a.endDate ? yearsFromNow(a.endDate, now) : undefined,
+      annualContribution: a.monthlyAdjustment * 12,
     }));
 }
 

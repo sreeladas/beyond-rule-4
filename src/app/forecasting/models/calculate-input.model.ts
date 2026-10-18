@@ -55,8 +55,12 @@ export class CalculateInput {
   investmentIncomeRatio = 0.2;
   taxDeferredRateMin = 0.3;
   taxDeferredRateMax = 0.5;
-  investmentIncomeRateMin = 0.15;
-  investmentIncomeRateMax = 0.2;
+  // Withdrawals are taxed progressively from the bottom bracket, so they use an
+  // average rate; the marginal rates above apply to deductions and refunds.
+  taxDeferredWithdrawalRateMin = 0.22;
+  taxDeferredWithdrawalRateMax = 0.3;
+  investmentIncomeRateMin = 0.18;
+  investmentIncomeRateMax = 0.23;
 
   // Assumed share of a taxable (non-registered) account that is unrealized gains
   // at retirement; only gains are taxed on withdrawal, basis is not. Fixed 50%
@@ -93,6 +97,14 @@ export class CalculateInput {
     this.investmentIncomeRatio = round(this.investmentIncomeRatio, 2);
     this.taxDeferredRateMin = round(this.taxDeferredRateMin, 4);
     this.taxDeferredRateMax = round(this.taxDeferredRateMax, 4);
+    this.taxDeferredWithdrawalRateMin = round(
+      this.taxDeferredWithdrawalRateMin,
+      4,
+    );
+    this.taxDeferredWithdrawalRateMax = round(
+      this.taxDeferredWithdrawalRateMax,
+      4,
+    );
     this.investmentIncomeRateMin = round(this.investmentIncomeRateMin, 4);
     this.investmentIncomeRateMax = round(this.investmentIncomeRateMax, 4);
   }
@@ -127,7 +139,7 @@ export class CalculateInput {
   get taxMinMultiplier(): number {
     const blendedTaxRate =
       this.taxFreeRatio * 0 +
-      this.taxDeferredRatio * this.taxDeferredRateMin +
+      this.taxDeferredRatio * this.taxDeferredWithdrawalRateMin +
       this.investmentIncomeRatio *
         this.investmentIncomeRateMin *
         this.taxableGainFraction;
@@ -137,7 +149,7 @@ export class CalculateInput {
   get taxMaxMultiplier(): number {
     const blendedTaxRate =
       this.taxFreeRatio * 0 +
-      this.taxDeferredRatio * this.taxDeferredRateMax +
+      this.taxDeferredRatio * this.taxDeferredWithdrawalRateMax +
       this.investmentIncomeRatio *
         this.investmentIncomeRateMax *
         this.taxableGainFraction;

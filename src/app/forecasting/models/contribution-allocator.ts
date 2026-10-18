@@ -137,6 +137,30 @@ export class ContributionAllocator {
     // what is not there.
   }
 
+  // Fills any household member's tax-free room, then overflows to taxable. With
+  // no tax-free room configured at all, tax-free is uncapped like other cells.
+  allocateHousehold(year: number, amount: number): void {
+    if (amount <= 0) {
+      return;
+    }
+    this.advanceTo(year);
+    const taxFreeKeys = [...this.remainingRoom.keys()].filter((k) =>
+      k.endsWith('::tax-free'),
+    );
+    if (taxFreeKeys.length === 0) {
+      this.split.taxFree += amount;
+      return;
+    }
+    let remaining = amount;
+    for (const k of taxFreeKeys) {
+      const used = Math.min(this.remainingRoom.get(k), remaining);
+      this.remainingRoom.set(k, this.remainingRoom.get(k) - used);
+      this.split.taxFree += used;
+      remaining -= used;
+    }
+    this.split.taxable += remaining;
+  }
+
   private addToType(type: TaxAdvantagedType, amount: number): void {
     if (type === 'tax-free') {
       this.split.taxFree += amount;
@@ -181,11 +205,21 @@ export interface TerminalSplitOptions {
   // Dated net-worth moves stacked in time order against the evolving split.
   reshapes?: DatedReshape[];
   retirements?: Retirement[];
+  householdAdjustments?: HouseholdAdjustment[];
   annualTakeHomeByOwner?: Record<string, number>;
   annualCosts?: number;
   inflationRate?: number;
   taxDeferredCashRate?: number;
   annualReturnRate?: number; // nominal
+}
+
+// A dated monthly contribution adjustment with no owner, in nominal dollars
+// per year. Active for years after startYear through endYear (open-ended when
+// absent).
+export interface HouseholdAdjustment {
+  startYear: number;
+  endYear?: number;
+  annualContribution: number;
 }
 
 export interface Retirement {
@@ -324,6 +358,14 @@ export function computeTerminalTaxRatios(
     const growthMultiplier = Math.pow(1 + growth, year - 1);
     for (const stream of streamsForYear(opts, year, growthMultiplier)) {
       allocator.allocate(year, stream);
+    }
+    for (const adjustment of opts.householdAdjustments ?? []) {
+      const active =
+        adjustment.startYear < year &&
+        (adjustment.endYear === undefined || year <= adjustment.endYear);
+      if (active) {
+        allocator.allocateHousehold(year, adjustment.annualContribution);
+      }
     }
     applyReshapesThrough(year);
   }

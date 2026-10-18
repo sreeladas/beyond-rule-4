@@ -213,3 +213,17 @@ describe('computeTerminalTaxRatios with growth', () => {
     expect(ratios.taxDeferredRatio).toBeGreaterThan(0.45);
   });
 });
+
+describe('computeTerminalTaxRatios with a household adjustment', () => {
+  it('fills tax-free room first, then overflows to taxable', () => {
+    const ratios = computeTerminalTaxRatios({
+      cells: [cell('A', 'tax-free', 7000), cell('B', 'tax-free', 3000)],
+      streams: [],
+      years: 1,
+      householdAdjustments: [{ startYear: 0, annualContribution: 30000 }],
+    });
+
+    expect(ratios.taxFreeRatio).toBeCloseTo(10000 / 30000);
+    expect(ratios.investmentIncomeRatio).toBeCloseTo(20000 / 30000);
+  });
+});

@@ -36,6 +36,7 @@ import {
   adjustmentToEvent,
   toDatedReshapes,
   toRetirements,
+  toHouseholdAdjustments,
 } from '../../models/scenario-event';
 import { round } from '../../utilities/number-utility';
 import CategoryUtility from './category-utility';
@@ -388,6 +389,7 @@ export class YnabComponent implements OnInit {
       toDatedReshapes(enabled),
       {
         retirements: toRetirements(enabled),
+        householdAdjustments: toHouseholdAdjustments(enabled),
         annualTakeHomeByOwner: householdMembers
           .filter((m) => m.takeHome > 0)
           .reduce(
@@ -878,6 +880,7 @@ export class YnabComponent implements OnInit {
     retirementPhase: Pick<
       TerminalSplitOptions,
       | 'retirements'
+      | 'householdAdjustments'
       | 'annualTakeHomeByOwner'
       | 'annualCosts'
       | 'inflationRate'
