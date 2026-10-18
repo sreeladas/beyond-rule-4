@@ -17,6 +17,7 @@ export interface Overrides {
   roomLimit: number;
   roomGrowth: number;
   income: number;
+  takeHome: number;
 }
 
 export default class NoteUtility {
@@ -36,6 +37,7 @@ export default class NoteUtility {
       roomLimit: undefined,
       roomGrowth: undefined,
       income: undefined,
+      takeHome: undefined,
     };
 
     if (!note) {
@@ -112,6 +114,9 @@ export default class NoteUtility {
           break;
         case 'income':
           override.income = c.value;
+          break;
+        case 'takehome':
+          override.takeHome = c.value;
           break;
         default:
           break;

@@ -157,3 +157,44 @@ describe('computeTerminalTaxRatios', () => {
     expect(ratios.investmentIncomeRatio).toBe(1);
   });
 });
+
+describe('computeTerminalTaxRatios with retirements', () => {
+  it('keeps the working partner payroll and routes their surplus to their own buckets', () => {
+    const ratios = computeTerminalTaxRatios({
+      cells: [],
+      streams: [
+        { ownerCode: 'A', type: 'tax-free', annualContribution: 24000 },
+        { ownerCode: 'B', type: 'tax-deferred', annualContribution: 18000 },
+        { ownerCode: 'B', type: 'tax-free', annualContribution: 6000 },
+      ],
+      years: 1,
+      retirements: [{ ownerCode: 'A', year: 0 }],
+      annualTakeHomeByOwner: { A: 72000, B: 84000 },
+      annualCosts: 60000,
+    });
+
+    expect(ratios.taxFreeRatio).toBeCloseTo(24000 / 42000);
+    expect(ratios.taxDeferredRatio).toBeCloseTo(18000 / 42000);
+    expect(ratios.investmentIncomeRatio).toBeCloseTo(0);
+  });
+});
+
+describe('computeTerminalTaxRatios with a retirement shortfall', () => {
+  it('drops bank saving and shrinks payroll net of tax', () => {
+    const ratios = computeTerminalTaxRatios({
+      cells: [],
+      streams: [
+        { ownerCode: 'B', type: 'tax-free', annualContribution: 1000 },
+        { ownerCode: 'B', type: 'tax-deferred', annualContribution: 6000 },
+      ],
+      years: 1,
+      retirements: [{ ownerCode: 'A', year: 0 }],
+      annualTakeHomeByOwner: { B: 60000 },
+      annualCosts: 62200,
+      taxDeferredCashRate: 0.6,
+    });
+
+    expect(ratios.taxFreeRatio).toBeCloseTo(0);
+    expect(ratios.taxDeferredRatio).toBeCloseTo(1);
+  });
+});

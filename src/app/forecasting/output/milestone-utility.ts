@@ -1,4 +1,6 @@
+import { CalculateInput } from '../models/calculate-input.model';
 import { Forecast, MonthlyForecast } from '../models/forecast.model';
+import { cloneInput } from '../models/scenario-event';
 
 export interface Milestone {
   date: Date | null;
@@ -24,22 +26,30 @@ const EMPTY: Milestone = { date: null, netWorth: null };
 // For a monotonic baseline (no withdrawals) the final run starts at the first
 // crossing, so this is identical to the old behavior; it only diverges when a
 // later event reverses a crossing — exactly the case the old code masked.
-function lastSustained(
+export function lastSustained(
   forecast: Forecast,
   predicate: (f: MonthlyForecast) => boolean
-): Milestone {
+): MonthlyForecast | undefined {
   const months = forecast?.monthlyForecasts;
   if (!months || months.length === 0) {
-    return EMPTY;
+    return undefined;
   }
-  let result = EMPTY;
+  let result: MonthlyForecast | undefined;
   for (let i = months.length - 1; i >= 0; i--) {
     if (!predicate(months[i])) {
       break;
     }
-    result = { date: months[i].date, netWorth: months[i].netWorth };
+    result = months[i];
   }
   return result;
+}
+
+function sustainedMilestone(
+  forecast: Forecast,
+  predicate: (f: MonthlyForecast) => boolean
+): Milestone {
+  const found = lastSustained(forecast, predicate);
+  return found ? { date: found.date, netWorth: found.netWorth } : EMPTY;
 }
 
 /**
@@ -55,17 +65,50 @@ function lastSustained(
  */
 export function extractMilestones(forecast: Forecast): ScenarioMilestones {
   return {
-    fi: lastSustained(forecast, (f) => f.fireAchieved),
-    coastPlusFive: lastSustained(
+    fi: sustainedMilestone(forecast, (f) => f.fireAchieved),
+    coastPlusFive: sustainedMilestone(
       forecast,
       (f) => f.netWorth >= f.coastFirePlusFive
     ),
-    coast: lastSustained(forecast, (f) => f.coastFireAchieved),
-    coastMinusFive: lastSustained(
+    coast: sustainedMilestone(forecast, (f) => f.coastFireAchieved),
+    coastMinusFive: sustainedMilestone(
       forecast,
       (f) => f.netWorth >= f.coastFireMinusFive
     ),
   };
+}
+
+// Bisection over the real forecast, so contribution growth, inflation erosion,
+// dated adjustments and net-worth events are all honored. null = unreachable.
+export function requiredMonthlyContribution(
+  input: CalculateInput,
+  milestone: keyof ScenarioMilestones,
+  targetDate: Date
+): number | null {
+  const meetsTarget = (monthlyContribution: number): boolean => {
+    const scenario = cloneInput(input);
+    scenario.monthlyContribution = monthlyContribution;
+    const date = extractMilestones(new Forecast(scenario))[milestone].date;
+    return !!date && date <= targetDate;
+  };
+
+  if (meetsTarget(0)) {
+    return 0;
+  }
+  let low = 0;
+  let high = input.fiNumber / 12;
+  if (!meetsTarget(high)) {
+    return null;
+  }
+  while (high - low > 1) {
+    const mid = (low + high) / 2;
+    if (meetsTarget(mid)) {
+      high = mid;
+    } else {
+      low = mid;
+    }
+  }
+  return Math.ceil(high);
 }
 
 export function formatMonthYear(date: Date | null): string | null {

@@ -2,22 +2,20 @@ import { Component, Input, OnChanges } from '@angular/core';
 
 import { CalculateInput } from '../../models/calculate-input.model';
 import { Forecast } from '../../models/forecast.model';
-import { ContributionAdjustment } from '../../models/contribution-adjustment.model';
-import { adjustmentToEvent, applyEvents } from '../../models/scenario-event';
 import {
-  computeTerminalTaxRatios,
-  DatedReshape,
-} from '../../models/contribution-allocator';
+  adjustmentToEvent,
+  applyEvents,
+  toDatedReshapes,
+  toRetirements,
+} from '../../models/scenario-event';
+import { computeTerminalTaxRatios } from '../../models/contribution-allocator';
+import { monthsBetween } from '../../utilities/date-utility';
 import {
   extractMilestones,
   formatMonthYear,
   Milestone,
   ScenarioMilestones,
 } from '../milestone-utility';
-
-// Same key the ynab input panel persists adjustments under — this card reads the
-// live list and reacts to the "Compare" flag the user sets there.
-const STORAGE_KEY = 'ff-contribution-adjustments';
 
 // Shows the effect of the adjustments the user has flagged "Compare". The
 // baseline is the enabled world (already baked into `calculateInput` / the
@@ -75,7 +73,7 @@ export class ScenarioComparisonComponent implements OnChanges {
   private recompute() {
     this.baselineMilestones = extractMilestones(this.forecast);
 
-    const compare = this.loadCompareAdjustments();
+    const compare = this.calculateInput.compareAdjustments || [];
     this.compareNames = compare.map((a) => a.name || 'Untitled adjustment');
 
     if (compare.length === 0) {
@@ -99,10 +97,14 @@ export class ScenarioComparisonComponent implements OnChanges {
     if (projection) {
       const ratios = computeTerminalTaxRatios({
         ...projection,
-        reshapes: [
-          ...(projection.reshapes ?? []),
-          ...this.toDatedReshapes(compare),
+        reshapes: [...(projection.reshapes ?? []), ...toDatedReshapes(compare)],
+        retirements: [
+          ...(projection.retirements ?? []),
+          ...toRetirements(compare),
         ],
+        annualCosts:
+          (projection.annualCosts ?? 0) +
+          compare.reduce((sum, a) => sum + (a.expenseAdjustment || 0), 0),
       });
       if (ratios) {
         scenarioInput.taxFreeRatio = ratios.taxFreeRatio;
@@ -139,57 +141,10 @@ export class ScenarioComparisonComponent implements OnChanges {
     return !last?.date || fi.date.getTime() < last.date.getTime();
   }
 
-  private loadCompareAdjustments(): ContributionAdjustment[] {
-    const stored = window.localStorage.getItem(STORAGE_KEY);
-    if (!stored) {
-      return [];
-    }
-    try {
-      const parsed = JSON.parse(stored);
-      return parsed
-        .filter((a) => a.state === 'compare')
-        .map((a) => ({
-          name: a.name,
-          startDate: this.parseDate(a.startDate),
-          endDate: a.endDate ? this.parseDate(a.endDate) : undefined,
-          monthlyAdjustment: a.monthlyAdjustment || 0,
-          expenseAdjustment: a.expenseAdjustment || 0,
-          netWorthAdjustment: a.netWorthAdjustment || 0,
-          state: 'compare' as const,
-        }));
-    } catch {
-      return [];
-    }
-  }
-
-  private parseDate(value: string | Date): Date {
-    return typeof value === 'string' ? new Date(value) : value;
-  }
-
-  // Net-worth adjustments -> dated reshapes: whole years from now to each start
-  // date, amount signed so a withdrawal drains and a windfall deposits. Mirrors
-  // the ynab panel so baseline and scenario use the same timing convention.
-  private toDatedReshapes(adjustments: ContributionAdjustment[]): DatedReshape[] {
-    const now = Date.now();
-    const YEAR_MS = 365.25 * 24 * 60 * 60 * 1000;
-    return adjustments
-      .filter((a) => a.netWorthAdjustment)
-      .map((a) => ({
-        year: Math.max(
-          0,
-          Math.floor((this.parseDate(a.startDate).getTime() - now) / YEAR_MS)
-        ),
-        amount: -a.netWorthAdjustment,
-      }));
-  }
-
   private diffMonths(scenario: Milestone, baseline: Milestone): number | null {
     if (!scenario.date || !baseline.date) {
       return null;
     }
-    return (
-      (scenario.date.getFullYear() - baseline.date.getFullYear()) * 12 +
-      (scenario.date.getMonth() - baseline.date.getMonth())
-    );
+    return monthsBetween(baseline.date, scenario.date);
   }
 }

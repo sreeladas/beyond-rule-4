@@ -20,6 +20,7 @@ export interface ContributionAdjustment {
   // Recurring change to the monthly contribution, in today's dollars, applied
   // from startDate to endDate (negative = you can save less).
   monthlyAdjustment: number;
+  retiringOwner?: string;
   // Standing annual change to retirement expenses; raises/lowers the FI number.
   expenseAdjustment?: number;
   // One-time principal moving in/out of the investment pool at startDate, in
@@ -49,6 +50,19 @@ export class ContributionAdjustmentUtility {
     return totalAdjustment;
   }
 
+  public static getRetiredOwners(
+    adjustments: ContributionAdjustment[],
+    forecastDate: Date
+  ): Set<string> {
+    const retired = new Set<string>();
+    (adjustments || []).forEach((adjustment) => {
+      if (adjustment.retiringOwner && forecastDate >= adjustment.startDate) {
+        retired.add(adjustment.retiringOwner);
+      }
+    });
+    return retired;
+  }
+
   public static sortAdjustments(
     adjustments: ContributionAdjustment[]
   ): ContributionAdjustment[] {
@@ -56,4 +70,48 @@ export class ContributionAdjustmentUtility {
       (a, b) => a.startDate.getTime() - b.startDate.getTime()
     );
   }
+}
+
+function parseStoredDate(value: string | Date): Date {
+  return typeof value === 'string' ? new Date(value) : value;
+}
+
+function toStoredDate(value: Date | string): string {
+  return value instanceof Date ? value.toISOString().split('T')[0] : value;
+}
+
+export function parseStoredAdjustments(stored: string | null): ContributionAdjustment[] {
+  if (!stored) {
+    return [];
+  }
+  try {
+    return JSON.parse(stored).map((adj) => ({
+      name: adj.name,
+      startDate: parseStoredDate(adj.startDate),
+      endDate: adj.endDate ? parseStoredDate(adj.endDate) : undefined,
+      monthlyAdjustment: adj.monthlyAdjustment || 0,
+      retiringOwner: adj.retiringOwner || undefined,
+      expenseAdjustment: adj.expenseAdjustment || 0,
+      netWorthAdjustment: adj.netWorthAdjustment || 0,
+      state: adj.state || 'enabled',
+    }));
+  } catch (e) {
+    console.error('Failed to parse contribution adjustments', e);
+    return [];
+  }
+}
+
+export function serializeAdjustments(adjustments: ContributionAdjustment[]): string {
+  return JSON.stringify(
+    adjustments.map((adj) => ({
+      name: adj.name,
+      startDate: toStoredDate(adj.startDate),
+      endDate: adj.endDate ? toStoredDate(adj.endDate) : undefined,
+      monthlyAdjustment: adj.monthlyAdjustment || 0,
+      retiringOwner: adj.retiringOwner || undefined,
+      expenseAdjustment: adj.expenseAdjustment || 0,
+      netWorthAdjustment: adj.netWorthAdjustment || 0,
+      state: adj.state || 'enabled',
+    }))
+  );
 }

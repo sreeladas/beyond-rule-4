@@ -8,7 +8,12 @@ import {
 
 import { CalculateInput } from '../../models/calculate-input.model';
 import { Forecast } from '../../models/forecast.model';
-import { extractMilestones, formatMonthYear } from '../milestone-utility';
+import { birthdateToDate } from '../../input/ynab/birthdate-utility';
+import {
+  extractMilestones,
+  formatMonthYear,
+  requiredMonthlyContribution,
+} from '../milestone-utility';
 
 @Component({
   selector: 'app-fire-dashboard',
@@ -24,6 +29,7 @@ export class FireDashboardComponent implements OnInit, OnChanges {
   coastFireAchievedDate: string;
   coastFireMinusFiveAchievedDate: string;
   coastFirePlusFiveAchievedDate: string;
+  minMonthlyContribution: number | null = null;
 
   constructor() {}
 
@@ -32,6 +38,7 @@ export class FireDashboardComponent implements OnInit, OnChanges {
   ngOnChanges(changes: SimpleChanges) {
     if (changes && this.calculateInput && this.forecast) {
       this.calculateAchievementDates();
+      this.minMonthlyContribution = this.calculateMinMonthlyContribution();
     }
   }
 
@@ -110,13 +117,13 @@ export class FireDashboardComponent implements OnInit, OnChanges {
     return Math.min(100, (this.calculateInput.netWorth / target) * 100);
   }
 
-  get minMonthlyContribution(): number | null {
-    if (!this.calculateInput || this.calculateInput.currentAge === 0) return null;
-    const r = this.calculateInput.expectedAnnualGrowthRate / 12;
-    const n = (this.calculateInput.retirementAge - this.calculateInput.currentAge) * 12;
-    if (n <= 0) return null;
-    const fvCurrent = this.calculateInput.netWorth * Math.pow(1 + r, n);
-    if (fvCurrent >= this.calculateInput.fiNumber) return 0;
-    return (this.calculateInput.fiNumber - fvCurrent) * r / (Math.pow(1 + r, n) - 1);
+  private calculateMinMonthlyContribution(): number | null {
+    const input = this.calculateInput;
+    if (input.currentAge === 0 || input.retirementAge <= input.currentAge) {
+      return null;
+    }
+    const retirementDate = birthdateToDate(input.birthdate);
+    retirementDate.setFullYear(retirementDate.getFullYear() + input.retirementAge);
+    return requiredMonthlyContribution(input, 'fi', retirementDate);
   }
 }

@@ -226,7 +226,7 @@
                 <label
                   for="expectedAnnualGrowthRate"
                   class="col-sm-12 col-md-5 col-form-label"
-                  >Expected Annual Rate of Return</label
+                  >Expected Annual Rate of Return (after inflation)</label
                 >
                 <div class="col">
                   <div class="input-group">
@@ -748,6 +748,22 @@
                           [ngModelOptions]="{ standalone: true }"
                           placeholder="Negative = you can save less each month"
                         />
+                      </div>
+                    </div>
+                    <div class="row mb-2">
+                      <div class="col">
+                        <label class="form-label small">Retiring Person</label>
+                        <select
+                          class="form-select form-select-sm"
+                          [(ngModel)]="adj.retiringOwner"
+                          (ngModelChange)="onAdjustmentChange()"
+                          [ngModelOptions]="{ standalone: true }"
+                        >
+                          <option [ngValue]="undefined">Not a retirement</option>
+                          <option *ngFor="let owner of householdOwners" [ngValue]="owner">
+                            {{ owner }}
+                          </option>
+                        </select>
                       </div>
                     </div>
                     <div class="row mb-2">

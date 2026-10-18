@@ -10,6 +10,7 @@ import { round } from '../../utilities/number-utility';
 import { birthdateToDate } from '../../input/ynab/birthdate-utility';
 import { CalculateInput } from '../../models/calculate-input.model';
 import { Forecast, MonthlyForecast } from '../../models/forecast.model';
+import { lastSustained } from '../milestone-utility';
 
 @Component({
   selector: 'app-fi-text',
@@ -65,7 +66,8 @@ export class FiTextComponent implements OnInit, OnChanges {
       return;
     }
 
-    const foundFiForecast = this.forecast.monthlyForecasts.find(
+    const foundFiForecast = lastSustained(
+      this.forecast,
       (f) => f.netWorth >= fiNumber
     );
     const birthdate = birthdateToDate(this.calculateInput.birthdate);
@@ -90,7 +92,8 @@ export class FiTextComponent implements OnInit, OnChanges {
           : null;
     }
 
-    const foundLeanFiForecast = this.forecast.monthlyForecasts.find(
+    const foundLeanFiForecast = lastSustained(
+      this.forecast,
       (f) => f.netWorth >= leanFiNumber
     );
     if (!foundLeanFiForecast) {

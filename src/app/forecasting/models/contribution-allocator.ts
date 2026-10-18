@@ -173,6 +173,95 @@ export interface TerminalSplitOptions {
   contributionGrowthRate?: number; // ongoing nominal raise on contributions
   // Dated net-worth moves stacked in time order against the evolving split.
   reshapes?: DatedReshape[];
+  retirements?: Retirement[];
+  annualTakeHomeByOwner?: Record<string, number>;
+  annualCosts?: number;
+  inflationRate?: number;
+  taxDeferredCashRate?: number;
+}
+
+export interface Retirement {
+  ownerCode: string;
+  year: number;
+}
+
+// Mirrors Forecast's retirement phase: retired owners stop; working owners with
+// take-home keep their tax-deferred (payroll) streams and replace the rest with
+// their share of take-home minus costs; those without keep saving as today. A
+// shortfall first shrinks payroll streams, then is a withdrawal, which doesn't
+// reshape the split here.
+function streamsForYear(
+  opts: TerminalSplitOptions,
+  year: number,
+  growthMultiplier: number,
+): ContributionStream[] {
+  const grow = (stream: ContributionStream): ContributionStream => ({
+    ...stream,
+    annualContribution: stream.annualContribution * growthMultiplier,
+  });
+  const retired = new Set(
+    (opts.retirements ?? [])
+      .filter((r) => r.year < year)
+      .map((r) => r.ownerCode),
+  );
+  if (retired.size === 0) {
+    return opts.streams.map(grow);
+  }
+
+  const takeHome = opts.annualTakeHomeByOwner ?? {};
+  const isPayroll = (s: ContributionStream) => s.type === 'tax-deferred';
+  const working = opts.streams.filter((s) => !retired.has(s.ownerCode));
+  const keepSaving = working.filter((s) => !(s.ownerCode in takeHome)).map(grow);
+  const workingOwners = Object.keys(takeHome).filter((o) => !retired.has(o));
+  if (workingOwners.length === 0) {
+    return keepSaving;
+  }
+  const payroll = working
+    .filter((s) => s.ownerCode in takeHome && isPayroll(s))
+    .map(grow);
+  const totalTakeHome = workingOwners.reduce(
+    (sum, owner) => sum + takeHome[owner] * growthMultiplier,
+    0,
+  );
+  const costs =
+    (opts.annualCosts ?? 0) * Math.pow(1 + (opts.inflationRate ?? 0), year - 1);
+  const surplus = totalTakeHome - costs;
+  if (surplus <= 0) {
+    return [
+      ...keepSaving,
+      ...redirectPayroll(payroll, -surplus, opts.taxDeferredCashRate ?? 1),
+    ];
+  }
+
+  const result = [...keepSaving, ...payroll];
+
+  for (const owner of workingOwners) {
+    const ownerSurplus =
+      (surplus * takeHome[owner] * growthMultiplier) / totalTakeHome;
+    const bankStreams = working.filter(
+      (s) => s.ownerCode === owner && !isPayroll(s),
+    );
+    const bankTotal = bankStreams.reduce(
+      (sum, s) => sum + s.annualContribution,
+      0,
+    );
+    if (bankTotal <= 0) {
+      result.push({
+        ownerCode: owner,
+        type: 'taxable',
+        annualContribution: ownerSurplus,
+      });
+      continue;
+    }
+    for (const stream of bankStreams) {
+      result.push({
+        ...stream,
+        annualContribution:
+          (ownerSurplus * stream.annualContribution) / bankTotal,
+      });
+    }
+  }
+  return result;
 }
 
 // Runs the allocator forward to retirement and returns the realized tax ratios.
@@ -180,6 +269,23 @@ export interface TerminalSplitOptions {
 // retirement horizon (a fixed number of years), rather than iterating on the
 // FI date. Growth on balances/contributions is uniform across buckets, so it
 // cancels in the ratio and is intentionally omitted from compounding here.
+function redirectPayroll(
+  payroll: ContributionStream[],
+  shortfall: number,
+  taxDeferredCashRate: number,
+): ContributionStream[] {
+  const total = payroll.reduce((sum, s) => sum + s.annualContribution, 0);
+  if (total <= 0) {
+    return payroll;
+  }
+  const keptShare =
+    1 - Math.min(total, shortfall / taxDeferredCashRate) / total;
+  return payroll.map((s) => ({
+    ...s,
+    annualContribution: s.annualContribution * keptShare,
+  }));
+}
+
 export function computeTerminalTaxRatios(
   opts: TerminalSplitOptions,
 ): TaxRatios | null {
@@ -203,11 +309,8 @@ export function computeTerminalTaxRatios(
   applyReshapesThrough(0); // moves dated now, before any contributions
   for (let year = 1; year <= years; year++) {
     const growthMultiplier = Math.pow(1 + growth, year - 1);
-    for (const stream of opts.streams) {
-      allocator.allocate(year, {
-        ...stream,
-        annualContribution: stream.annualContribution * growthMultiplier,
-      });
+    for (const stream of streamsForYear(opts, year, growthMultiplier)) {
+      allocator.allocate(year, stream);
     }
     applyReshapesThrough(year);
   }

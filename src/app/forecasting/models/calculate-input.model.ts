@@ -14,6 +14,13 @@ export interface NetWorthDelta {
   amount: number;
 }
 
+export interface HouseholdMember {
+  ownerCode: string;
+  monthlyContribution: number;
+  payrollContribution: number;
+  takeHome: number;
+}
+
 export class CalculateInput {
   netWorth = 0;
   annualExpenses = 0;
@@ -32,6 +39,8 @@ export class CalculateInput {
   retirementAge = 60;
   contributionAdjustments: ContributionAdjustment[] = [];
   netWorthDeltas: NetWorthDelta[] = [];
+  compareAdjustments: ContributionAdjustment[] = [];
+  householdMembers: HouseholdMember[] = [];
   isUsingSampleData = false;
 
   // Inputs to the time-stepped tax-bucket projection (streams, room cells,
@@ -107,6 +116,10 @@ export class CalculateInput {
     return 1 / Math.pow(1 + this.inflationRate, yearIndex);
   }
 
+  get monthlyGrowthFactor(): number {
+    return Math.pow(1 + this.expectedAnnualGrowthRate, 1 / 12);
+  }
+
   get safeWithdrawalTimes() {
     return 1 / this.annualSafeWithdrawalRate;
   }
@@ -131,19 +144,27 @@ export class CalculateInput {
     return 1 / (1 - blendedTaxRate);
   }
 
+  get taxDeferredCashRate(): number {
+    return 1 - (this.taxDeferredRateMin + this.taxDeferredRateMax) / 2;
+  }
+
+  get avgTaxMultiplier(): number {
+    return (this.taxMinMultiplier + this.taxMaxMultiplier) / 2;
+  }
+
   get fiNumber() {
-    const avgTaxMultiplier =
-      (this.taxMinMultiplier + this.taxMaxMultiplier) / 2;
-    return this.safeWithdrawalTimes * this.annualExpenses * avgTaxMultiplier;
+    return (
+      this.safeWithdrawalTimes * this.annualExpenses * this.avgTaxMultiplier
+    );
   }
 
   get leanFiNumber() {
     let leanFiNumber = this.fiNumber * this.leanFiPercentage;
     if (this.leanAnnualExpenses) {
-      const avgTaxMultiplier =
-        (this.taxMinMultiplier + this.taxMaxMultiplier) / 2;
       leanFiNumber =
-        this.safeWithdrawalTimes * this.leanAnnualExpenses * avgTaxMultiplier;
+        this.safeWithdrawalTimes *
+        this.leanAnnualExpenses *
+        this.avgTaxMultiplier;
     }
     return leanFiNumber;
   }
@@ -211,6 +232,7 @@ export class CalculateInput {
     const targetAmount =
       this.annualExpenses * this.taxMinMultiplier * this.safeWithdrawalTimes;
     if (this.netWorth >= targetAmount) return 0;
+    if (this.netWorth <= 0) return Infinity;
     return (
       Math.log(targetAmount / this.netWorth) /
       Math.log((100 + this.expectedAnnualGrowthRate * 100) / 100)
@@ -221,6 +243,7 @@ export class CalculateInput {
     const targetAmount =
       this.annualExpenses * this.taxMaxMultiplier * this.safeWithdrawalTimes;
     if (this.netWorth >= targetAmount) return 0;
+    if (this.netWorth <= 0) return Infinity;
     return (
       Math.log(targetAmount / this.netWorth) /
       Math.log((100 + this.expectedAnnualGrowthRate * 100) / 100)
@@ -228,6 +251,9 @@ export class CalculateInput {
   }
 
   get coastYearsRange(): string {
+    if (!isFinite(this.coastYearsMin) || !isFinite(this.coastYearsMax)) {
+      return '—';
+    }
     const min = Math.round(this.coastYearsMin);
     const max = Math.round(this.coastYearsMax);
     return min === max ? `${min}` : `${min} - ${max}`;

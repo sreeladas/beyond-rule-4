@@ -1,6 +1,8 @@
 import { Component, OnInit, Input, OnChanges, SimpleChanges, } from '@angular/core';
 import { Forecast } from '../../models/forecast.model';
 import { CalculateInput } from '../../models/calculate-input.model';
+import { lastSustained } from '../milestone-utility';
+import { monthsBetween } from '../../utilities/date-utility';
 
 @Component({
     selector: 'app-expense-impact',
@@ -87,13 +89,11 @@ export class ImpactComponent implements OnInit, OnChanges {
     }
 
     private getFiForecast(forecast: Forecast, fiNumber: number) {
-        return forecast.monthlyForecasts.find(f => f.netWorth >= fiNumber);
+        return lastSustained(forecast, f => f.netWorth >= fiNumber);
     }
 
     private getImpactDateText(currentDate: Date, newDate: Date): string {
-        let monthDifference =
-            ((currentDate.getFullYear() - newDate.getFullYear()) * 12)
-            + (currentDate.getMonth() - newDate.getMonth());
+        let monthDifference = monthsBetween(newDate, currentDate);
 
         if (monthDifference === 0) {
             return '<1 month';

@@ -16,6 +16,7 @@ import {
 import { Forecast } from '../../../models/forecast.model';
 import { Milestones } from '../milestone.model';
 import { CalculateInput } from '../../../models/calculate-input.model';
+import { lastSustained } from '../../milestone-utility';
 
 @Component({
   selector: 'app-milestones-chart',
@@ -390,16 +391,20 @@ export class ChartComponent implements OnInit, AfterContentInit, OnChanges {
       );
 
       // Add Coast FIRE achievement reference lines
-      const coastFireAchieved = this.forecast.monthlyForecasts.find(
+      const coastFireAchieved = lastSustained(
+        this.forecast,
         (f) => f.coastFireAchieved
       );
-      const fireAchieved = this.forecast.monthlyForecasts.find(
+      const fireAchieved = lastSustained(
+        this.forecast,
         (f) => f.fireAchieved
       );
-      const coastFireMinusFiveAchieved = this.forecast.monthlyForecasts.find(
+      const coastFireMinusFiveAchieved = lastSustained(
+        this.forecast,
         (f) => f.netWorth >= f.coastFireMinusFive
       );
-      const coastFirePlusFiveAchieved = this.forecast.monthlyForecasts.find(
+      const coastFirePlusFiveAchieved = lastSustained(
+        this.forecast,
         (f) => f.netWorth >= f.coastFirePlusFive
       );
 

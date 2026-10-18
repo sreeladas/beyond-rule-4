@@ -1,8 +1,6 @@
 import { CalculateInput } from '../../models/calculate-input.model';
 import { cloneInput } from '../../models/scenario-event';
 
-export { cloneInput };
-
 export interface WindfallAllocation {
   taxFree: number;
   taxDeferred: number;

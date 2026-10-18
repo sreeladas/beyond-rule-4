@@ -12,7 +12,15 @@ import * as ynab from 'ynab';
 
 import { YnabApiService } from '../../../ynab-api/ynab-api.service';
 import { OwnerService } from '../../../household-split/services/owner.service';
-import { CalculateInput } from '../../models/calculate-input.model';
+import {
+  CalculateInput,
+  HouseholdMember,
+} from '../../models/calculate-input.model';
+import {
+  ContributionAdjustment,
+  parseStoredAdjustments,
+  serializeAdjustments,
+} from '../../models/contribution-adjustment.model';
 import {
   RoomCell,
   ContributionStream,
@@ -23,7 +31,12 @@ import {
   DatedReshape,
   computeTerminalTaxRatios,
 } from '../../models/contribution-allocator';
-import { applyEvents, adjustmentToEvent } from '../../models/scenario-event';
+import {
+  applyEvents,
+  adjustmentToEvent,
+  toDatedReshapes,
+  toRetirements,
+} from '../../models/scenario-event';
 import { round } from '../../utilities/number-utility';
 import CategoryUtility from './category-utility';
 import NoteUtility, { Overrides } from './note-utility';
@@ -93,6 +106,7 @@ export class YnabComponent implements OnInit {
   // Accessible (taxable + tax-free) savings at today's scale; a net-worth
   // withdrawal larger than this would have to tap tax-deferred accounts.
   public accessibleNetWorth = 0;
+  public householdOwners: string[] = [];
   public expenses: {
     ynab: {
       monthly: number;
@@ -361,12 +375,31 @@ export class YnabComponent implements OnInit {
     const enabled = (this.contributionAdjustments || []).filter(
       (a) => (a.state ?? 'enabled') === 'enabled',
     );
-    const enabledReshapes = this.toDatedReshapes(enabled);
+    const householdMembers = this.buildHouseholdMembers();
+    this.householdOwners = householdMembers.map((m) => m.ownerCode);
+    result.householdMembers = householdMembers;
+    result.compareAdjustments = (this.contributionAdjustments || []).filter(
+      (a) => a.state === 'compare',
+    );
 
     const projection = this.buildTaxProjectionOptions(
       yearsToRetirement,
       result.contributionGrowthRate,
-      enabledReshapes,
+      toDatedReshapes(enabled),
+      {
+        retirements: toRetirements(enabled),
+        annualTakeHomeByOwner: householdMembers
+          .filter((m) => m.takeHome > 0)
+          .reduce(
+            (byOwner, m) => ({ ...byOwner, [m.ownerCode]: m.takeHome * 12 }),
+            {},
+          ),
+        annualCosts:
+          result.annualExpenses +
+          enabled.reduce((sum, a) => sum + (a.expenseAdjustment || 0), 0),
+        inflationRate: result.inflationRate,
+        taxDeferredCashRate: result.taxDeferredCashRate,
+      },
     );
 
     // Contribution-only split (no withdrawals) drives the allocation display and
@@ -413,45 +446,16 @@ export class YnabComponent implements OnInit {
     this.calculateInputChange.emit(folded);
   }
 
-  private loadContributionAdjustments() {
-    const stored = window.localStorage.getItem('ff-contribution-adjustments');
-    if (!stored) {
-      return [];
-    }
-    try {
-      const parsed = JSON.parse(stored);
-      return parsed.map((adj) => ({
-        name: adj.name,
-        startDate: this.parseStoredDate(adj.startDate),
-        endDate: adj.endDate ? this.parseStoredDate(adj.endDate) : undefined,
-        monthlyAdjustment: adj.monthlyAdjustment || 0,
-        expenseAdjustment: adj.expenseAdjustment || 0,
-        netWorthAdjustment: adj.netWorthAdjustment || 0,
-        state: adj.state || 'enabled',
-      }));
-    } catch (e) {
-      console.error('Failed to parse contribution adjustments', e);
-      return [];
-    }
+  private loadContributionAdjustments(): ContributionAdjustment[] {
+    return parseStoredAdjustments(
+      window.localStorage.getItem('ff-contribution-adjustments'),
+    );
   }
 
-  private parseStoredDate(value): Date {
-    return typeof value === 'string' ? new Date(value) : value;
-  }
-
-  saveContributionAdjustments(adjustments) {
-    const serialized = adjustments.map((adj) => ({
-      name: adj.name,
-      startDate: this.getDateString(adj.startDate),
-      endDate: adj.endDate ? this.getDateString(adj.endDate) : undefined,
-      monthlyAdjustment: adj.monthlyAdjustment || 0,
-      expenseAdjustment: adj.expenseAdjustment || 0,
-      netWorthAdjustment: adj.netWorthAdjustment || 0,
-      state: adj.state || 'enabled',
-    }));
+  saveContributionAdjustments(adjustments: ContributionAdjustment[]) {
     window.localStorage.setItem(
       'ff-contribution-adjustments',
-      JSON.stringify(serialized),
+      serializeAdjustments(adjustments),
     );
     this.recalculate();
   }
@@ -464,6 +468,7 @@ export class YnabComponent implements OnInit {
         startDate: new Date(),
         endDate: undefined,
         monthlyAdjustment: 0,
+        retiringOwner: undefined,
         expenseAdjustment: 0,
         netWorthAdjustment: 0,
         state: 'enabled',
@@ -868,6 +873,14 @@ export class YnabComponent implements OnInit {
     years: number,
     contributionGrowthRate: number,
     reshapes: DatedReshape[],
+    retirementPhase: Pick<
+      TerminalSplitOptions,
+      | 'retirements'
+      | 'annualTakeHomeByOwner'
+      | 'annualCosts'
+      | 'inflationRate'
+      | 'taxDeferredCashRate'
+    >,
   ): TerminalSplitOptions | null {
     const streams = this.buildContributionStreams();
     // Nothing to project forward -> defer to the static balance snapshot.
@@ -884,25 +897,38 @@ export class YnabComponent implements OnInit {
       years,
       contributionGrowthRate,
       reshapes,
+      ...retirementPhase,
     };
   }
 
-  // Turn net-worth adjustments into dated reshapes for the projection: whole
-  // years from now to each row's start date, amount signed so a withdrawal
-  // (negative adjustment) drains and a windfall (positive) deposits.
-  private toDatedReshapes(adjustments): DatedReshape[] {
-    const now = Date.now();
-    const YEAR_MS = 365.25 * 24 * 60 * 60 * 1000;
-    return adjustments
-      .filter((a) => a.netWorthAdjustment)
-      .map((a) => {
-        const start =
-          a.startDate instanceof Date
-            ? a.startDate
-            : new Date(a.startDate);
-        const year = Math.max(0, Math.floor((start.getTime() - now) / YEAR_MS));
-        return { year, amount: -a.netWorthAdjustment };
-      });
+  private buildHouseholdMembers(): HouseholdMember[] {
+    const members = new Map<string, HouseholdMember>();
+    this.accounts.controls.forEach((a) => {
+      const monthlyContribution = this.parseAmount(a.value.monthlyContribution);
+      const takeHome = this.parseAmount(a.value.takeHome);
+      if (!monthlyContribution && !takeHome) {
+        return;
+      }
+      const ownerCode = this.ownerService.ownerCodeForAccountName(a.value.name);
+      const member = members.get(ownerCode) ?? {
+        ownerCode,
+        monthlyContribution: 0,
+        payrollContribution: 0,
+        takeHome: 0,
+      };
+      member.monthlyContribution += monthlyContribution;
+      if (a.value.taxTreatment === 'tax-deferred') {
+        member.payrollContribution += monthlyContribution;
+      }
+      member.takeHome = Math.max(member.takeHome, takeHome);
+      members.set(ownerCode, member);
+    });
+    return [...members.values()];
+  }
+
+  private parseAmount(value): number {
+    const parsed = Number.parseFloat(value);
+    return Number.isNaN(parsed) ? 0 : parsed;
   }
 
   // Per-person, per-type contribution-room cells. `ff limit` is the total
@@ -1105,6 +1131,7 @@ export class YnabComponent implements OnInit {
             roomLimit: overrides.roomLimit,
             roomGrowth: overrides.roomGrowth,
             income: overrides.income,
+            takeHome: overrides.takeHome,
           }),
         );
       });

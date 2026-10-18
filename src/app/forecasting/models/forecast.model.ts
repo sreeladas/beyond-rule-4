@@ -1,7 +1,8 @@
-import { CalculateInput } from './calculate-input.model';
+import { CalculateInput, HouseholdMember } from './calculate-input.model';
 import { round } from '../utilities/number-utility';
 import { Birthdate } from '../input/ynab/birthdate-utility';
 import { ContributionAdjustmentUtility } from './contribution-adjustment.model';
+import { monthsBetween } from '../utilities/date-utility';
 
 export class Forecast {
   monthlyForecasts: MonthlyForecast[];
@@ -36,9 +37,7 @@ export class Forecast {
       return;
     }
 
-    let monthDifference =
-      (forecastDate.getFullYear() - fromDate.getFullYear()) * 12 +
-      (forecastDate.getMonth() - fromDate.getMonth());
+    let monthDifference = monthsBetween(fromDate, forecastDate);
 
     if (monthDifference === 0) {
       return;
@@ -66,8 +65,8 @@ export class Forecast {
     const stopForecastingAmount = calculateInput.fiNumber * 2; // default to a bit more than Fat FI.
 
     const annualExpenses = calculateInput.annualExpenses;
-    const monthlyAverageGrowth =
-      1 + calculateInput.expectedAnnualGrowthRate / 12;
+    const monthlyAverageGrowth = calculateInput.monthlyGrowthFactor;
+    const lastEventMonth = this.getLastEventMonthIndex(calculateInput);
     const startingNetWorth = calculateInput.netWorth;
     let currentNetWorth = startingNetWorth;
     let totalContributions = currentNetWorth; // can't yet delve into the past
@@ -93,7 +92,10 @@ export class Forecast {
         fireAchieved: startingNetWorth >= calculateInput.fiNumber,
       }),
     ];
-    while (currentNetWorth < stopForecastingAmount && month < 720) {
+    while (
+      (currentNetWorth < stopForecastingAmount || month <= lastEventMonth) &&
+      month < 720
+    ) {
       month++;
       const forecastDate = new Date(this.month0Date);
       forecastDate.setMonth(this.month0Date.getMonth() + month);
@@ -102,12 +104,23 @@ export class Forecast {
         calculateInput.contributionAdjustments,
         forecastDate
       );
+      const retiredOwners = ContributionAdjustmentUtility.getRetiredOwners(
+        calculateInput.contributionAdjustments,
+        forecastDate
+      );
       const yearIndex = Math.floor((month - 1) / 12);
       const deflator = calculateInput.inflationDeflator(yearIndex);
       const realBase = round(
-        calculateInput.monthlyContribution *
-          calculateInput.contributionGrowthMultiplier(yearIndex) *
-          deflator
+        retiredOwners.size === 0
+          ? calculateInput.monthlyContribution *
+              calculateInput.contributionGrowthMultiplier(yearIndex) *
+              deflator
+          : this.getRetirementPhaseContribution(
+              calculateInput,
+              retiredOwners,
+              yearIndex,
+              deflator
+            )
       );
       const realAdjustment = round(adjustment * deflator);
       const contribution = realBase + realAdjustment;
@@ -160,6 +173,9 @@ export class Forecast {
         })
       );
       currentNetWorth = newNetWorth;
+      if (retiredOwners.size > 0 && currentNetWorth <= 0) {
+        break;
+      }
     }
     this.monthlyForecasts = monthlyForecasts;
   }
@@ -186,6 +202,65 @@ export class Forecast {
       }
     }
     return round(total);
+  }
+
+  private getLastEventMonthIndex(calculateInput: CalculateInput): number {
+    const dates = [
+      ...(calculateInput.netWorthDeltas || []).map((d) => d.date),
+      ...(calculateInput.contributionAdjustments || []).map((a) => a.startDate),
+      ...(calculateInput.contributionAdjustments || []).map((a) => a.endDate),
+    ].filter((d) => !!d);
+    let last = 0;
+    for (const value of dates) {
+      last = Math.max(last, monthsBetween(this.month0Date, new Date(value)));
+    }
+    return last;
+  }
+
+  // Once anyone retires, a working member with take-home pay saves their payroll
+  // (tax-deferred) contributions plus what their pay leaves after household
+  // costs; one without keeps saving as today. A shortfall redirects payroll
+  // first (pre-tax RRSP becomes taxed pay), then is withdrawn, grossed up for
+  // tax.
+  private getRetirementPhaseContribution(
+    calculateInput: CalculateInput,
+    retiredOwners: Set<string>,
+    yearIndex: number,
+    deflator: number
+  ): number {
+    const working = calculateInput.householdMembers.filter(
+      (member) => !retiredOwners.has(member.ownerCode)
+    );
+    const realPay = (amount: number) =>
+      amount * calculateInput.contributionGrowthMultiplier(yearIndex) * deflator;
+    const sumPay = (
+      members: HouseholdMember[],
+      pick: (member: HouseholdMember) => number
+    ) => members.reduce((sum, member) => sum + realPay(pick(member)), 0);
+    const earners = working.filter((m) => m.takeHome > 0);
+    const keepSaving = sumPay(
+      working.filter((m) => !m.takeHome),
+      (m) => m.monthlyContribution
+    );
+    if (working.length > 0 && earners.length === 0) {
+      return keepSaving;
+    }
+
+    const payroll = sumPay(earners, (m) => m.payrollContribution);
+    const surplus =
+      sumPay(earners, (m) => m.takeHome) - calculateInput.annualExpenses / 12;
+    if (surplus >= 0) {
+      return keepSaving + payroll + surplus;
+    }
+    const cashRate = calculateInput.taxDeferredCashRate;
+    const fromPayroll = Math.min(payroll, -surplus / cashRate);
+    const shortfall = -surplus - fromPayroll * cashRate;
+    return (
+      keepSaving +
+      payroll -
+      fromPayroll -
+      shortfall * calculateInput.avgTaxMultiplier
+    );
   }
 
   private calculateCoastFireForMonth(

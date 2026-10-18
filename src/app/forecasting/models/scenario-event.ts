@@ -1,6 +1,10 @@
 import { CalculateInput, NetWorthDelta } from './calculate-input.model';
 import { ContributionAdjustment } from './contribution-adjustment.model';
-import { ContributionTaxType } from './contribution-allocator';
+import {
+  ContributionTaxType,
+  DatedReshape,
+  Retirement,
+} from './contribution-allocator';
 
 // The generalized scenario seam. A ScenarioEvent is a pure authoring object
 // (a house purchase, a windfall, a contribution change) that EMITS the engine
@@ -48,12 +52,13 @@ export interface ReshapeContext {
 export function adjustmentToEvent(adj: ContributionAdjustment): ScenarioEvent {
   return {
     contributionDeltas: () =>
-      adj.monthlyAdjustment
+      adj.monthlyAdjustment || adj.retiringOwner
         ? [
             {
               name: adj.name,
               startDate: adj.startDate,
-              monthlyAdjustment: adj.monthlyAdjustment,
+              monthlyAdjustment: adj.monthlyAdjustment || 0,
+              retiringOwner: adj.retiringOwner,
               endDate: adj.endDate,
             },
           ]
@@ -90,6 +95,33 @@ export function netWorthTouchesTaxDeferred(
 }
 
 const YEAR_MS = 365.25 * 24 * 60 * 60 * 1000;
+
+const yearsFromNow = (date: Date, now: number): number =>
+  Math.max(0, Math.floor((new Date(date).getTime() - now) / YEAR_MS));
+
+export function toDatedReshapes(
+  adjustments: ContributionAdjustment[],
+  now = Date.now()
+): DatedReshape[] {
+  return adjustments
+    .filter((a) => a.netWorthAdjustment)
+    .map((a) => ({
+      year: yearsFromNow(a.startDate, now),
+      amount: -a.netWorthAdjustment,
+    }));
+}
+
+export function toRetirements(
+  adjustments: ContributionAdjustment[],
+  now = Date.now()
+): Retirement[] {
+  return adjustments
+    .filter((a) => a.retiringOwner)
+    .map((a) => ({
+      ownerCode: a.retiringOwner,
+      year: yearsFromNow(a.startDate, now),
+    }));
+}
 
 // Clone a CalculateInput for use as a scenario. The copy constructor
 // (Object.assign) copies array fields by reference, so the mutable primitive
