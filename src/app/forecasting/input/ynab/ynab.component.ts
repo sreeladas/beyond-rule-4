@@ -399,6 +399,8 @@ export class YnabComponent implements OnInit {
           enabled.reduce((sum, a) => sum + (a.expenseAdjustment || 0), 0),
         inflationRate: result.inflationRate,
         taxDeferredCashRate: result.taxDeferredCashRate,
+        annualReturnRate:
+          (1 + result.expectedAnnualGrowthRate) * (1 + result.inflationRate) - 1,
       },
     );
 
@@ -880,6 +882,7 @@ export class YnabComponent implements OnInit {
       | 'annualCosts'
       | 'inflationRate'
       | 'taxDeferredCashRate'
+      | 'annualReturnRate'
     >,
   ): TerminalSplitOptions | null {
     const streams = this.buildContributionStreams();

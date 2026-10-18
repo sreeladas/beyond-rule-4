@@ -50,7 +50,11 @@ export class ContributionAllocator {
   // `startingBalances` seed the terminal split with dollars already sitting in
   // each wrapper today (not subject to room). Cells with no entry are UNCAPPED:
   // their streams always land fully in their own type and never overflow.
-  constructor(cells: RoomCell[], startingBalances?: Partial<TerminalSplit>) {
+  constructor(
+    cells: RoomCell[],
+    startingBalances?: Partial<TerminalSplit>,
+    private readonly annualReturnRate = 0,
+  ) {
     this.split = {
       taxFree: startingBalances?.taxFree ?? 0,
       taxDeferred: startingBalances?.taxDeferred ?? 0,
@@ -66,12 +70,15 @@ export class ContributionAllocator {
   // Year 1 draws against the accumulated starting room. Entering year Y >= 2,
   // each cell gains a flat annualGrowth of new room; unused room carries
   // forward.
-  private advanceTo(year: number): void {
+  advanceTo(year: number): void {
     while (this.currentYear < year) {
       this.currentYear++;
       if (this.currentYear < 2) {
         continue;
       }
+      this.split.taxFree *= 1 + this.annualReturnRate;
+      this.split.taxDeferred *= 1 + this.annualReturnRate;
+      this.split.taxable *= 1 + this.annualReturnRate;
       for (const [k, growth] of this.annualGrowth) {
         this.remainingRoom.set(k, (this.remainingRoom.get(k) ?? 0) + growth);
       }
@@ -178,6 +185,7 @@ export interface TerminalSplitOptions {
   annualCosts?: number;
   inflationRate?: number;
   taxDeferredCashRate?: number;
+  annualReturnRate?: number; // nominal
 }
 
 export interface Retirement {
@@ -264,11 +272,6 @@ function streamsForYear(
   return result;
 }
 
-// Runs the allocator forward to retirement and returns the realized tax ratios.
-// Approximates the fiNumber fixed point by evaluating the split at the
-// retirement horizon (a fixed number of years), rather than iterating on the
-// FI date. Growth on balances/contributions is uniform across buckets, so it
-// cancels in the ratio and is intentionally omitted from compounding here.
 function redirectPayroll(
   payroll: ContributionStream[],
   shortfall: number,
@@ -286,10 +289,19 @@ function redirectPayroll(
   }));
 }
 
+// Runs the allocator forward to retirement and returns the realized tax ratios.
+// Approximates the fiNumber fixed point by evaluating the split at the
+// retirement horizon (a fixed number of years), rather than iterating on the
+// FI date. Balances compound yearly, so money invested today outweighs a later
+// contribution of the same size.
 export function computeTerminalTaxRatios(
   opts: TerminalSplitOptions,
 ): TaxRatios | null {
-  const allocator = new ContributionAllocator(opts.cells, opts.startingBalances);
+  const allocator = new ContributionAllocator(
+    opts.cells,
+    opts.startingBalances,
+    opts.annualReturnRate,
+  );
   const growth = opts.contributionGrowthRate ?? 0;
   const years = Math.max(0, Math.floor(opts.years));
 
@@ -308,6 +320,7 @@ export function computeTerminalTaxRatios(
 
   applyReshapesThrough(0); // moves dated now, before any contributions
   for (let year = 1; year <= years; year++) {
+    allocator.advanceTo(year);
     const growthMultiplier = Math.pow(1 + growth, year - 1);
     for (const stream of streamsForYear(opts, year, growthMultiplier)) {
       allocator.allocate(year, stream);

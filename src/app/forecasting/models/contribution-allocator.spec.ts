@@ -198,3 +198,18 @@ describe('computeTerminalTaxRatios with a retirement shortfall', () => {
     expect(ratios.taxDeferredRatio).toBeCloseTo(1);
   });
 });
+
+describe('computeTerminalTaxRatios with growth', () => {
+  it('compounds money invested today ahead of later contributions', () => {
+    const ratios = computeTerminalTaxRatios({
+      cells: [],
+      streams: [{ ownerCode: 'S', type: 'tax-deferred', annualContribution: 20000 }],
+      startingBalances: { taxFree: 200000 },
+      years: 20,
+      annualReturnRate: 0.07,
+    });
+
+    expect(ratios.taxDeferredRatio).toBeLessThan(0.55);
+    expect(ratios.taxDeferredRatio).toBeGreaterThan(0.45);
+  });
+});
