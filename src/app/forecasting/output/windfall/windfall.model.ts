@@ -1,4 +1,7 @@
 import { CalculateInput } from '../../models/calculate-input.model';
+import { cloneInput } from '../../models/scenario-event';
+
+export { cloneInput };
 
 export interface WindfallAllocation {
   taxFree: number;
@@ -14,19 +17,6 @@ export interface ScenarioBuildResult {
 
 export function emptyAllocation(): WindfallAllocation {
   return { taxFree: 0, taxDeferred: 0, taxable: 0, debt: 0 };
-}
-
-/**
- * Clone a CalculateInput for use as a scenario. The CalculateInput copy
- * constructor (Object.assign) copies contributionAdjustments by reference, so
- * we deep-copy that array here to guarantee the baseline is never mutated.
- */
-export function cloneInput(base: CalculateInput): CalculateInput {
-  const clone = new CalculateInput(base);
-  clone.contributionAdjustments = (base.contributionAdjustments || []).map(
-    (a) => ({ ...a })
-  );
-  return clone;
 }
 
 /**

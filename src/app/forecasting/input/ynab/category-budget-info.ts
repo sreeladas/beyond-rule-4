@@ -8,7 +8,11 @@ export class CategoryBudgetInfo {
   min = { month: '', value: undefined };
   categoryNote: string;
 
-  constructor(category: ynab.Category, monthDetails: ynab.MonthDetail[]) {
+  constructor(
+    category: ynab.Category,
+    monthDetails: ynab.MonthDetail[],
+    private source: 'budgeted' | 'spent',
+  ) {
     this.category = category;
     this.addMonths(monthDetails);
   }
@@ -24,6 +28,10 @@ export class CategoryBudgetInfo {
       return;
     }
     this.categoryNote = found.note;
+    if (this.source === 'spent') {
+      this.monthBalances[monthDetail.month] = -found.activity;
+      return;
+    }
     let retrievedBudgeted = found.budgeted;
 
     // account for overspending e.g budgeted 100 available -57 after activity

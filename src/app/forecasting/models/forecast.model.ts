@@ -112,12 +112,28 @@ export class Forecast {
       const realAdjustment = round(adjustment * deflator);
       const contribution = realBase + realAdjustment;
 
-      const newNetWorth = round(
-        ((currentNetWorth + contribution) * 100 * monthlyAverageGrowth) / 100
+      // Dated one-time principal moving in/out of the pool this month (down
+      // payment out, windfall / home-sale proceeds in). Already in today's
+      // dollars, so — unlike contributions — it is NOT deflated. Applied before
+      // this month's growth: money withdrawn stops compounding immediately,
+      // money added starts. Folded into totalContributions (it is principal,
+      // not a return) so totalReturns stays coherent.
+      const netWorthDelta = this.getNetWorthDeltaForMonth(
+        calculateInput.netWorthDeltas,
+        forecastDate
       );
-      const interestGain = round(newNetWorth - currentNetWorth - contribution);
+
+      const newNetWorth = round(
+        ((currentNetWorth + contribution + netWorthDelta) *
+          100 *
+          monthlyAverageGrowth) /
+          100
+      );
+      const interestGain = round(
+        newNetWorth - currentNetWorth - contribution - netWorthDelta
+      );
       const timesAnnualExpenses = round(newNetWorth / annualExpenses);
-      totalContributions += contribution;
+      totalContributions += contribution + netWorthDelta;
       const totalReturns = round(newNetWorth - totalContributions);
 
       // Calculate dynamic Coast FIRE values for this month
@@ -146,6 +162,30 @@ export class Forecast {
       currentNetWorth = newNetWorth;
     }
     this.monthlyForecasts = monthlyForecasts;
+  }
+
+  // Sum of dated net-worth deltas landing in the same calendar month as
+  // forecastDate (which is always the 1st of the month). A delta whose date
+  // falls outside the forecast horizon — e.g. in the past — matches no month
+  // and is silently ignored.
+  private getNetWorthDeltaForMonth(
+    deltas: { date: Date; amount: number }[],
+    forecastDate: Date
+  ): number {
+    if (!deltas || deltas.length === 0) {
+      return 0;
+    }
+    let total = 0;
+    for (const delta of deltas) {
+      const date = new Date(delta.date);
+      if (
+        date.getFullYear() === forecastDate.getFullYear() &&
+        date.getMonth() === forecastDate.getMonth()
+      ) {
+        total += delta.amount;
+      }
+    }
+    return round(total);
   }
 
   private calculateCoastFireForMonth(

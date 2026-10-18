@@ -1,0 +1,112 @@
+<div *ngIf="calculateInput">
+  <p class="text-muted small mb-3">
+    Compares your current plan (every <strong>Enabled</strong> adjustment) against
+    that same plan with every adjustment you've marked <strong>Compare</strong>
+    folded in. Toggle a life event to <em>Compare</em> in Contribution Adjustments
+    to see how it moves your FI date here.
+  </p>
+
+  <div *ngIf="!scenarioMilestones" class="alert alert-light border small mb-0">
+    No adjustments are set to <strong>Compare</strong>. Mark one or more
+    Contribution Adjustments as <em>Compare</em> to see their combined effect.
+  </div>
+
+  <div *ngIf="scenarioMilestones">
+    <div class="mb-2 small text-muted">
+      Comparing:
+      <span *ngFor="let n of compareNames; let last = last"
+        ><span class="badge bg-secondary-subtle text-secondary-emphasis me-1">{{
+          n
+        }}</span></span
+      >
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-sm align-middle mb-2">
+        <thead>
+          <tr>
+            <th>Scenario</th>
+            <th>Full FI</th>
+            <th>Coast (+5y)</th>
+            <th>Coast</th>
+            <th>Coast (−5y)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="table-light">
+            <td class="fw-semibold">
+              Baseline<div class="small text-muted">enabled only</div>
+            </td>
+            <td
+              *ngFor="
+                let m of [
+                  baselineMilestones?.fi,
+                  baselineMilestones?.coastPlusFive,
+                  baselineMilestones?.coast,
+                  baselineMilestones?.coastMinusFive
+                ]
+              "
+            >
+              <div>{{ formatDate(m?.date) }}</div>
+              <div class="small text-muted" *ngIf="m?.netWorth != null">
+                {{
+                  m.netWorth
+                    | currency: calculateInput.currencyIsoCode : 'symbol' : '1.0-0'
+                }}
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td class="fw-semibold">
+              With compare<div class="small text-muted">enabled + compare</div>
+            </td>
+            <td>
+              <ng-container *ngIf="scenarioFiSustained; else neverSustained">
+                <div>{{ formatDate(scenarioMilestones?.fi?.date) }}</div>
+                <div
+                  class="small text-muted"
+                  *ngIf="scenarioMilestones?.fi?.netWorth != null"
+                >
+                  {{
+                    scenarioMilestones.fi.netWorth
+                      | currency
+                        : calculateInput.currencyIsoCode
+                        : 'symbol'
+                        : '1.0-0'
+                  }}
+                </div>
+                <div class="small" [ngClass]="deltaClass" *ngIf="deltaLabel()">
+                  {{ deltaLabel() }}
+                </div>
+              </ng-container>
+              <ng-template #neverSustained>
+                <span
+                  class="badge bg-danger-subtle text-danger-emphasis"
+                  title="Net worth never stays at or above the FI number through the forecast horizon"
+                  >Never sustained</span
+                >
+              </ng-template>
+            </td>
+            <td
+              *ngFor="
+                let m of [
+                  scenarioMilestones?.coastPlusFive,
+                  scenarioMilestones?.coast,
+                  scenarioMilestones?.coastMinusFive
+                ]
+              "
+            >
+              <div>{{ formatDate(m?.date) }}</div>
+              <div class="small text-muted" *ngIf="m?.netWorth != null">
+                {{
+                  m.netWorth
+                    | currency: calculateInput.currencyIsoCode : 'symbol' : '1.0-0'
+                }}
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

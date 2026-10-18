@@ -106,6 +106,30 @@ export class ContributionAllocator {
     }
   }
 
+  // Move a one-time net-worth amount at the current point in the projection.
+  // Positive = a withdrawal draining accessible buckets first (taxable ->
+  // tax-free -> tax-deferred); negative = a deposit (windfall) landing in
+  // taxable. Called from the year loop so it sees the balances built up by every
+  // contribution allocated so far — i.e. "as of the withdrawal date".
+  reshape(amount: number): void {
+    if (amount < 0) {
+      this.split.taxable += -amount;
+      return;
+    }
+    let remaining = amount;
+    const order: (keyof TerminalSplit)[] = ['taxable', 'taxFree', 'taxDeferred'];
+    for (const bucket of order) {
+      if (remaining <= 0) {
+        break;
+      }
+      const take = Math.min(this.split[bucket], remaining);
+      this.split[bucket] -= take;
+      remaining -= take;
+    }
+    // Any shortfall beyond the drained buckets is dropped — you cannot pull out
+    // what is not there.
+  }
+
   private addToType(type: TaxAdvantagedType, amount: number): void {
     if (type === 'tax-free') {
       this.split.taxFree += amount;
@@ -132,12 +156,23 @@ export class ContributionAllocator {
   }
 }
 
+// A dated one-time net-worth move, in today's dollars. `year` is whole years
+// from now (0 = now). Positive amount = withdrawal (down payment); negative =
+// deposit (windfall). Applied after that year's contributions, so it reshapes
+// the split as of its date.
+export interface DatedReshape {
+  year: number;
+  amount: number;
+}
+
 export interface TerminalSplitOptions {
   cells: RoomCell[];
   streams: ContributionStream[];
   startingBalances?: Partial<TerminalSplit>;
   years: number; // whole contribution years to retirement
   contributionGrowthRate?: number; // ongoing nominal raise on contributions
+  // Dated net-worth moves stacked in time order against the evolving split.
+  reshapes?: DatedReshape[];
 }
 
 // Runs the allocator forward to retirement and returns the realized tax ratios.
@@ -152,6 +187,20 @@ export function computeTerminalTaxRatios(
   const growth = opts.contributionGrowthRate ?? 0;
   const years = Math.max(0, Math.floor(opts.years));
 
+  // Withdrawals stack in time order; each is applied after the contributions of
+  // its year, so it drains the balance that has actually accrued by then.
+  const reshapes = (opts.reshapes ?? [])
+    .slice()
+    .sort((a, b) => a.year - b.year);
+  let ri = 0;
+  const applyReshapesThrough = (year: number): void => {
+    while (ri < reshapes.length && reshapes[ri].year <= year) {
+      allocator.reshape(reshapes[ri].amount);
+      ri++;
+    }
+  };
+
+  applyReshapesThrough(0); // moves dated now, before any contributions
   for (let year = 1; year <= years; year++) {
     const growthMultiplier = Math.pow(1 + growth, year - 1);
     for (const stream of opts.streams) {
@@ -160,7 +209,9 @@ export function computeTerminalTaxRatios(
         annualContribution: stream.annualContribution * growthMultiplier,
       });
     }
+    applyReshapesThrough(year);
   }
+  applyReshapesThrough(Infinity); // anything dated past the horizon
 
   return allocator.getRatios();
 }

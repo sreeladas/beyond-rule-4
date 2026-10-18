@@ -125,6 +125,39 @@
         </div>
       </div>
     </div>
+
+    <!-- Scenario Comparison (adjustments flagged "Compare") -->
+    <div class="mb-4">
+      <button
+        class="btn btn-link w-100 text-start p-0"
+        type="button"
+        (click)="isScenarioComparisonCollapsed = !isScenarioComparisonCollapsed"
+        [attr.aria-expanded]="!isScenarioComparisonCollapsed"
+        aria-controls="scenario-comparison-content"
+      >
+        <h3 class="fw-bolder mb-0">
+          Scenario Comparison
+          <i
+            class="fas"
+            [class.fa-chevron-down]="isScenarioComparisonCollapsed"
+            [class.fa-chevron-up]="!isScenarioComparisonCollapsed"
+            [class.float-end]="true"
+          ></i>
+        </h3>
+      </button>
+      <div
+        id="scenario-comparison-content"
+        [ngbCollapse]="isScenarioComparisonCollapsed"
+      >
+        <div class="mt-2">
+          <app-scenario-comparison
+            [calculateInput]="calculateInput"
+            [forecast]="forecast"
+          >
+          </app-scenario-comparison>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 

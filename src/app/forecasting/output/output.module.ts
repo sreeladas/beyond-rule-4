@@ -7,6 +7,7 @@ import { FiTextModule } from './fi-text/fi-text.module';
 import { ImpactModule } from './impact/impact.module';
 import { WindfallModule } from './windfall/windfall.module';
 import { FireDashboardComponent } from './fire-dashboard/fire-dashboard.component';
+import { ScenarioComparisonComponent } from './scenario-comparison/scenario-comparison.component';
 
 @NgModule({
   imports: [
@@ -17,7 +18,11 @@ import { FireDashboardComponent } from './fire-dashboard/fire-dashboard.componen
     WindfallModule,
   ],
   exports: [ForecastingOutputComponent],
-  declarations: [ForecastingOutputComponent, FireDashboardComponent],
+  declarations: [
+    ForecastingOutputComponent,
+    FireDashboardComponent,
+    ScenarioComparisonComponent,
+  ],
   providers: [],
 })
 export class OutputModule {}

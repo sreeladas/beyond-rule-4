@@ -22,6 +22,7 @@ export class ForecastingOutputComponent implements OnInit, OnChanges {
   isMilestonesCollapsed = false;
   isExpenseImpactCollapsed = false;
   isWindfallCollapsed = true;
+  isScenarioComparisonCollapsed = true;
 
   constructor() {}
 

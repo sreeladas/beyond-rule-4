@@ -92,7 +92,11 @@ export default class CategoryUtility {
     const isCategoryDirectlyHidden =
       !includeHiddenYnabCategories && category.hidden;
     let ignore = childrenIgnore || isCategoryDirectlyHidden;
-    const categoryBudgetInfo = new CategoryBudgetInfo(category, monthDetails);
+    const categoryBudgetInfo = new CategoryBudgetInfo(
+      category,
+      monthDetails,
+      isContribution ? 'budgeted' : 'spent'
+    );
     const retrievedBudgeted = categoryBudgetInfo.mean;
 
     if (retrievedBudgeted < 0) {

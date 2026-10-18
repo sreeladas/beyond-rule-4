@@ -1,6 +1,18 @@
 import { Birthdate, birthdateToDate } from '../input/ynab/birthdate-utility';
 import { round } from '../utilities/number-utility';
 import { ContributionAdjustment } from './contribution-adjustment.model';
+import { TerminalSplitOptions } from './contribution-allocator';
+
+// A one-time, dated change to the investment pool, in today's dollars. Positive
+// adds principal (windfall, home-sale proceeds); negative withdraws it (down
+// payment). Applied by computeForecast in the month the date falls in — the
+// mechanism that lets a future-dated event, not just a month-0 one, move net
+// worth.
+export interface NetWorthDelta {
+  name?: string;
+  date: Date;
+  amount: number;
+}
 
 export class CalculateInput {
   netWorth = 0;
@@ -19,7 +31,15 @@ export class CalculateInput {
   birthdate: Birthdate = null;
   retirementAge = 60;
   contributionAdjustments: ContributionAdjustment[] = [];
+  netWorthDeltas: NetWorthDelta[] = [];
   isUsingSampleData = false;
+
+  // Inputs to the time-stepped tax-bucket projection (streams, room cells,
+  // starting balances, horizon, and the ENABLED dated net-worth reshapes). Kept
+  // so the Scenario Comparison can re-run the projection with compare-flagged
+  // withdrawals stacked on. Absent when there are no bucket-tagged streams (the
+  // static-ratio fallback path).
+  taxProjection?: TerminalSplitOptions;
 
   taxFreeRatio = 0.4;
   taxDeferredRatio = 0.4;

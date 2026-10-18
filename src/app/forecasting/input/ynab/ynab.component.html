@@ -630,9 +630,12 @@
             <div class="row mb-3">
               <div class="col">
                 <p class="small text-muted">
-                  Add life events that will adjust your monthly contributions
-                  (e.g., getting a certification or promotion, buying a house,
-                  retiring).
+                  Add life events that reshape your plan: a monthly contribution
+                  change, a one-time net-worth move (a windfall, or a house down
+                  payment as a negative), and/or a standing expense change. Set
+                  each to <strong>Enabled</strong> (folded into your forecast),
+                  <strong>Disabled</strong> (ignored), or <strong>Compare</strong>
+                  (held aside so the Scenario Comparison can show its effect).
                 </p>
               </div>
             </div>
@@ -648,25 +651,52 @@
               >
                 <div class="card mb-3">
                   <div class="card-body">
-                    <div class="row">
-                      <div class="col text-end">
+                    <div class="d-flex align-items-center mb-2">
+                      <div class="btn-group btn-group-sm" role="group" aria-label="Adjustment state">
                         <button
                           type="button"
-                          class="btn btn-sm btn-outline-secondary"
-                          (click)="removeAdjustment(i)"
-                          title="Remove adjustment"
-                          style="
-                            border-radius: 50%;
-                            width: 28px;
-                            height: 28px;
-                            padding: 0;
-                            font-size: 18px;
-                            line-height: 1;
-                          "
+                          class="btn"
+                          [class.btn-success]="(adj.state || 'enabled') === 'enabled'"
+                          [class.btn-outline-secondary]="(adj.state || 'enabled') !== 'enabled'"
+                          (click)="setAdjustmentState(i, 'enabled')"
                         >
-                          ×
+                          Enabled
+                        </button>
+                        <button
+                          type="button"
+                          class="btn"
+                          [class.btn-secondary]="adj.state === 'disabled'"
+                          [class.btn-outline-secondary]="adj.state !== 'disabled'"
+                          (click)="setAdjustmentState(i, 'disabled')"
+                        >
+                          Disabled
+                        </button>
+                        <button
+                          type="button"
+                          class="btn"
+                          [class.btn-primary]="adj.state === 'compare'"
+                          [class.btn-outline-secondary]="adj.state !== 'compare'"
+                          (click)="setAdjustmentState(i, 'compare')"
+                        >
+                          Compare
                         </button>
                       </div>
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-outline-secondary ms-auto"
+                        (click)="removeAdjustment(i)"
+                        title="Remove adjustment"
+                        style="
+                          border-radius: 50%;
+                          width: 28px;
+                          height: 28px;
+                          padding: 0;
+                          font-size: 18px;
+                          line-height: 1;
+                        "
+                      >
+                        ×
+                      </button>
                     </div>
                     <div class="row mb-2">
                       <div class="col">
@@ -695,6 +725,19 @@
                     <div class="row mb-2">
                       <div class="col">
                         <label class="form-label small"
+                          >End Date <span class="text-muted">(optional)</span></label
+                        >
+                        <input
+                          type="date"
+                          class="form-control form-control-sm"
+                          [value]="adj.endDate ? getDateString(adj.endDate) : ''"
+                          (input)="setAdjustmentEndDate(i, $event.target.value)"
+                        />
+                      </div>
+                    </div>
+                    <div class="row mb-2">
+                      <div class="col">
+                        <label class="form-label small"
                           >Monthly Adjustment ({{ currencyIsoCode }})</label
                         >
                         <input
@@ -703,7 +746,46 @@
                           [(ngModel)]="adj.monthlyAdjustment"
                           (blur)="onAdjustmentChange()"
                           [ngModelOptions]="{ standalone: true }"
-                          placeholder="Use negative for decreased contributions"
+                          placeholder="Negative = you can save less each month"
+                        />
+                      </div>
+                    </div>
+                    <div class="row mb-2">
+                      <div class="col">
+                        <label class="form-label small"
+                          >Net Worth Adjustment ({{ currencyIsoCode }})</label
+                        >
+                        <input
+                          type="number"
+                          class="form-control form-control-sm"
+                          [(ngModel)]="adj.netWorthAdjustment"
+                          (blur)="onAdjustmentChange()"
+                          [ngModelOptions]="{ standalone: true }"
+                          placeholder="One-time at start date. Negative = down payment out"
+                        />
+                        <div
+                          *ngIf="netWorthTapsTaxDeferred(adj)"
+                          class="form-text text-warning-emphasis mt-1"
+                        >
+                          <i class="fas fa-exclamation-triangle me-1"></i>
+                          This withdrawal is larger than your accessible (taxable +
+                          tax-free) savings, so it would tap tax-deferred accounts
+                          (e.g. RRSP/401k) that are usually locked until retirement.
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row mb-2">
+                      <div class="col">
+                        <label class="form-label small"
+                          >Annual Expense Adjustment ({{ currencyIsoCode }})</label
+                        >
+                        <input
+                          type="number"
+                          class="form-control form-control-sm"
+                          [(ngModel)]="adj.expenseAdjustment"
+                          (blur)="onAdjustmentChange()"
+                          [ngModelOptions]="{ standalone: true }"
+                          placeholder="Standing change to yearly expenses; moves your FI number"
                         />
                       </div>
                     </div>

@@ -19,8 +19,11 @@ import {
   ContributionTaxType,
   TaxAdvantagedType,
   TaxRatios,
+  TerminalSplitOptions,
+  DatedReshape,
   computeTerminalTaxRatios,
 } from '../../models/contribution-allocator';
+import { applyEvents, adjustmentToEvent } from '../../models/scenario-event';
 import { round } from '../../utilities/number-utility';
 import CategoryUtility from './category-utility';
 import NoteUtility, { Overrides } from './note-utility';
@@ -87,6 +90,9 @@ export class YnabComponent implements OnInit {
   public monthlyExpenses: number;
   public leanMonthlyExpenses: number;
   public contributionAdjustments: any[] = [];
+  // Accessible (taxable + tax-free) savings at today's scale; a net-worth
+  // withdrawal larger than this would have to tap tax-deferred accounts.
+  public accessibleNetWorth = 0;
   public expenses: {
     ynab: {
       monthly: number;
@@ -336,40 +342,75 @@ export class YnabComponent implements OnInit {
     result.inflationRate = Math.max(0, this.inflationRate / 100);
     result.contributionGrowthRate = this.contributionGrowthRate / 100;
 
-    // Honor per-person contribution room when any account declares it, deriving
-    // the terminal tax split (capped contributions overflow to taxable). With
-    // no room notes, fall back to the legacy point-in-time snapshot unchanged.
+    // Derive the terminal tax split by projecting bucket-tagged contributions
+    // forward to retirement (capped contributions overflow to taxable; uncapped
+    // when no room is declared). Only when there is nothing to project — no
+    // tagged contribution streams — fall back to the legacy point-in-time
+    // balance snapshot. A frozen snapshot is wrong whenever ongoing
+    // contributions skew toward one bucket, so it is a last resort, not the
+    // default.
     const yearsToRetirement = Math.max(
       0,
       Math.floor(result.retirementAge - result.currentAge),
     );
-    const allocated = this.calculateAllocatedTaxRatios(
+
+    // Only ENABLED rows shape the main forecast (disabled are ignored; compare
+    // rows are held back for the Scenario Comparison card). Their net-worth
+    // moves become DATED reshapes fed to the tax-bucket projection, so each
+    // drains the balance as of its own date and multiple stack in time order.
+    const enabled = (this.contributionAdjustments || []).filter(
+      (a) => (a.state ?? 'enabled') === 'enabled',
+    );
+    const enabledReshapes = this.toDatedReshapes(enabled);
+
+    const projection = this.buildTaxProjectionOptions(
       yearsToRetirement,
       result.contributionGrowthRate,
+      enabledReshapes,
     );
-    this.allocation = allocated
+
+    // Contribution-only split (no withdrawals) drives the allocation display and
+    // the accessible-savings figure the per-row warning compares against; the
+    // final split additionally stacks the enabled withdrawals.
+    const contribOnly = projection
+      ? computeTerminalTaxRatios({ ...projection, reshapes: [] })
+      : null;
+    const allocatedFinal = projection
+      ? computeTerminalTaxRatios(projection)
+      : null;
+
+    this.allocation = contribOnly
       ? {
-          taxFree: allocated.taxFreeRatio,
-          taxDeferred: allocated.taxDeferredRatio,
-          taxable: allocated.investmentIncomeRatio,
+          taxFree: contribOnly.taxFreeRatio,
+          taxDeferred: contribOnly.taxDeferredRatio,
+          taxable: contribOnly.investmentIncomeRatio,
         }
       : null;
-    const taxRatios = allocated ?? this.calculateTaxRatios();
+    const taxRatios = allocatedFinal ?? this.calculateTaxRatios();
 
     if (taxRatios) {
       result.taxFreeRatio = taxRatios.taxFreeRatio;
       result.taxDeferredRatio = taxRatios.taxDeferredRatio;
       result.investmentIncomeRatio = taxRatios.investmentIncomeRatio;
     }
-
-    const storedAdjustments = this.loadContributionAdjustments();
-    if (storedAdjustments) {
-      result.contributionAdjustments = storedAdjustments;
-    }
+    result.taxProjection = projection ?? undefined;
 
     result.isUsingSampleData = this.isUsingSampleData;
-    result.roundAll();
-    this.calculateInputChange.emit(result);
+
+    // Accessible (taxable + tax-free) savings at today's scale — how much a
+    // withdrawal can cover before it must reach into tax-deferred accounts.
+    const accessibleRatios = contribOnly ?? taxRatios;
+    this.accessibleNetWorth = accessibleRatios
+      ? (accessibleRatios.taxFreeRatio +
+          accessibleRatios.investmentIncomeRatio) *
+        result.netWorth
+      : 0;
+
+    // Fold the enabled rows' pool/contribution/expense effects (NOT tax ratios —
+    // the projection above already did those) into the emitted input.
+    const folded = applyEvents(result, enabled.map(adjustmentToEvent));
+
+    this.calculateInputChange.emit(folded);
   }
 
   private loadContributionAdjustments() {
@@ -381,11 +422,12 @@ export class YnabComponent implements OnInit {
       const parsed = JSON.parse(stored);
       return parsed.map((adj) => ({
         name: adj.name,
-        startDate:
-          typeof adj.startDate === 'string'
-            ? new Date(adj.startDate)
-            : adj.startDate,
-        monthlyAdjustment: adj.monthlyAdjustment,
+        startDate: this.parseStoredDate(adj.startDate),
+        endDate: adj.endDate ? this.parseStoredDate(adj.endDate) : undefined,
+        monthlyAdjustment: adj.monthlyAdjustment || 0,
+        expenseAdjustment: adj.expenseAdjustment || 0,
+        netWorthAdjustment: adj.netWorthAdjustment || 0,
+        state: adj.state || 'enabled',
       }));
     } catch (e) {
       console.error('Failed to parse contribution adjustments', e);
@@ -393,14 +435,19 @@ export class YnabComponent implements OnInit {
     }
   }
 
+  private parseStoredDate(value): Date {
+    return typeof value === 'string' ? new Date(value) : value;
+  }
+
   saveContributionAdjustments(adjustments) {
     const serialized = adjustments.map((adj) => ({
       name: adj.name,
-      startDate:
-        adj.startDate instanceof Date
-          ? adj.startDate.toISOString().split('T')[0]
-          : adj.startDate,
-      monthlyAdjustment: adj.monthlyAdjustment,
+      startDate: this.getDateString(adj.startDate),
+      endDate: adj.endDate ? this.getDateString(adj.endDate) : undefined,
+      monthlyAdjustment: adj.monthlyAdjustment || 0,
+      expenseAdjustment: adj.expenseAdjustment || 0,
+      netWorthAdjustment: adj.netWorthAdjustment || 0,
+      state: adj.state || 'enabled',
     }));
     window.localStorage.setItem(
       'ff-contribution-adjustments',
@@ -415,9 +462,37 @@ export class YnabComponent implements OnInit {
       {
         name: '',
         startDate: new Date(),
+        endDate: undefined,
         monthlyAdjustment: 0,
+        expenseAdjustment: 0,
+        netWorthAdjustment: 0,
+        state: 'enabled',
       },
     ];
+    this.saveContributionAdjustments(this.contributionAdjustments);
+  }
+
+  setAdjustmentState(index: number, state: 'enabled' | 'disabled' | 'compare') {
+    this.contributionAdjustments[index].state = state;
+    this.saveContributionAdjustments(this.contributionAdjustments);
+  }
+
+  // True when this row's net-worth withdrawal is bigger than the accessible
+  // (taxable + tax-free) savings, so it would have to reach into tax-deferred
+  // accounts (RRSP/401k) that are usually locked until retirement. Disabled rows
+  // never warn.
+  netWorthTapsTaxDeferred(adj): boolean {
+    if ((adj.state || 'enabled') === 'disabled') {
+      return false;
+    }
+    const amount = adj.netWorthAdjustment || 0;
+    return amount < 0 && -amount > this.accessibleNetWorth;
+  }
+
+  setAdjustmentEndDate(index: number, dateString: string) {
+    this.contributionAdjustments[index].endDate = dateString
+      ? new Date(dateString)
+      : undefined;
     this.saveContributionAdjustments(this.contributionAdjustments);
   }
 
@@ -785,24 +860,49 @@ export class YnabComponent implements OnInit {
     };
   }
 
-  // Realized terminal tax split honoring per-person contribution room. Returns
-  // null when no account declares room (no `ff room` note), so the caller can
-  // fall back to the static balance snapshot.
-  private calculateAllocatedTaxRatios(
+  // Inputs to the time-stepped terminal tax-split projection, honoring per-person
+  // contribution room and stacking the given dated reshapes. Returns null when no
+  // account declares a bucket-tagged stream, so the caller falls back to the
+  // static balance snapshot (where dated reshaping isn't modeled).
+  private buildTaxProjectionOptions(
     years: number,
     contributionGrowthRate: number,
-  ): TaxRatios | null {
-    const cells = this.buildRoomCells();
-    if (cells.length === 0) {
+    reshapes: DatedReshape[],
+  ): TerminalSplitOptions | null {
+    const streams = this.buildContributionStreams();
+    // Nothing to project forward -> defer to the static balance snapshot.
+    // Otherwise always project: room cells cap the contributions that have a
+    // configured limit and leave the rest uncapped (an empty cells array means
+    // every stream lands fully in its own bucket).
+    if (streams.length === 0) {
       return null;
     }
-    return computeTerminalTaxRatios({
-      cells,
-      streams: this.buildContributionStreams(),
+    return {
+      cells: this.buildRoomCells(),
+      streams,
       startingBalances: this.getBalanceSplit(),
       years,
       contributionGrowthRate,
-    });
+      reshapes,
+    };
+  }
+
+  // Turn net-worth adjustments into dated reshapes for the projection: whole
+  // years from now to each row's start date, amount signed so a withdrawal
+  // (negative adjustment) drains and a windfall (positive) deposits.
+  private toDatedReshapes(adjustments): DatedReshape[] {
+    const now = Date.now();
+    const YEAR_MS = 365.25 * 24 * 60 * 60 * 1000;
+    return adjustments
+      .filter((a) => a.netWorthAdjustment)
+      .map((a) => {
+        const start =
+          a.startDate instanceof Date
+            ? a.startDate
+            : new Date(a.startDate);
+        const year = Math.max(0, Math.floor((start.getTime() - now) / YEAR_MS));
+        return { year, amount: -a.netWorthAdjustment };
+      });
   }
 
   // Per-person, per-type contribution-room cells. `ff limit` is the total

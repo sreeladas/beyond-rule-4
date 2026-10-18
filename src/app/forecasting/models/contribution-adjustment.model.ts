@@ -1,7 +1,31 @@
+// enabled  -> applied to the main forecast (and the comparison baseline).
+// disabled -> ignored everywhere.
+// compare  -> applied ONLY to the scenario side of the comparison, so the tool
+//             answers "what does adding this row do?" against the enabled world.
+export type AdjustmentState = 'enabled' | 'disabled' | 'compare';
+
+// A generic dated life-event dial. Originally just a monthly-contribution nudge,
+// now the single authoring object for every scenario effect the engine
+// understands: a recurring contribution change, a one-time net-worth move (a
+// windfall or a house down payment), and/or a standing expense change. A house
+// purchase is simply a row with a negative net-worth adjustment plus a negative
+// monthly adjustment — no property-specific fields needed.
 export interface ContributionAdjustment {
   name: string;
   startDate: Date;
+  // Optional: the monthly adjustment stops applying on/after this date. Absent =
+  // open-ended (the historical behavior). Lets a bounded flow — e.g. a mortgage
+  // payment that ends at payoff — turn itself off.
+  endDate?: Date;
+  // Recurring change to the monthly contribution, in today's dollars, applied
+  // from startDate to endDate (negative = you can save less).
   monthlyAdjustment: number;
+  // Standing annual change to retirement expenses; raises/lowers the FI number.
+  expenseAdjustment?: number;
+  // One-time principal moving in/out of the investment pool at startDate, in
+  // today's dollars (positive = windfall in, negative = down payment out).
+  netWorthAdjustment?: number;
+  state?: AdjustmentState;
 }
 
 export class ContributionAdjustmentUtility {
@@ -15,7 +39,9 @@ export class ContributionAdjustmentUtility {
 
     let totalAdjustment = 0;
     adjustments.forEach((adjustment) => {
-      if (forecastDate >= adjustment.startDate) {
+      const started = forecastDate >= adjustment.startDate;
+      const ended = adjustment.endDate && forecastDate >= adjustment.endDate;
+      if (started && !ended) {
         totalAdjustment += adjustment.monthlyAdjustment;
       }
     });
